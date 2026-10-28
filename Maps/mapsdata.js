@@ -1,11 +1,10 @@
-// Maps/mapsdata.js - Loader central
-// Por ahora solo carga Elarion, después agregas más con un import
+// Este archivo solo carga los mapas
+// Para agregar un mapa nuevo, agregás una línea acá
 
-import { ElarionData } from './elariondata.js';
+function loadScript(url) {
+  const s = document.createElement('script');
+  s.src = url;
+  document.head.appendChild(s);
+}
 
-export const MapsRegistry = {
-  elarion: ElarionData
-};
-
-// Log para saber que cargó bien
-console.log("MapsRegistry cargado:", Object.keys(MapsRegistry));
+loadScript('Maps/elariondata.js');
