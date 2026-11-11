@@ -1,4 +1,4 @@
-// main.js - Adventurer RPG - Firebase + Vertical + Fullscreen
+// main.js - Adventurer RPG - Firebase + Horizontal + Fullscreen
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
@@ -24,14 +24,15 @@ let currentUser = null;
 let slots = [null, null, null]; // 3 slots
 
 // --- 1. BLOQUEO VERTICAL + PANTALLA COMPLETA ---
+// El juego es HORIZONTAL. Si lo tenés en vertical, muestra el cartel.
 function checkOrientation() {
-  const isLandscape = window.innerWidth > window.innerHeight;
-  if (isLandscape && window.innerWidth > 500) {
+  const isPortrait = window.innerHeight > window.innerWidth;
+  if (isPortrait) {
     appEl.innerHTML = `
       <div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f0f1a;color:white;text-align:center;padding:20px;font-family:sans-serif">
         <div style="font-size:50px">📱</div>
         <h2>Girá el celular</h2>
-        <p>Adventurer RPG se juega en vertical</p>
+        <p>Adventurer RPG se juega en horizontal</p>
       </div>`;
     return false;
   }
