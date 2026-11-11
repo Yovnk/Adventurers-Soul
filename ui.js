@@ -14,6 +14,10 @@
     return null;
   }
 
+  // Movimiento: lo lee main.js para mover al personaje
+  // x: -1 izquierda, 1 derecha. y: -1 arriba, 1 abajo
+  window.moveInput = { x: 0, y: 0 };
+
   // ===== ESTILOS =====
   var css = "";
   css += "* { margin:0; padding:0; box-sizing:border-box; font-family: Tahoma, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }";
@@ -67,7 +71,14 @@
   css += "#window-skills { top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:94vw; }";
   css += ".skill-row { display:flex; justify-content:space-between; padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; margin-bottom:6px; font-size:13px; }";
   css += "#skills-empty { font-size:13px; color:#666; text-align:center; padding:14px 0; }";
-  css += "@media (max-height:450px) { #hud-top-left { width:230px; } #hud-bottom-right { width:170px; height:170px; transform:scale(0.85); transform-origin:bottom right; } #window-personaje { width:94vw; } }";
+  css += "#joypad { position:absolute; bottom:10px; left:10px; width:150px; height:150px; pointer-events:auto; z-index:5; }";
+  css += ".joy-btn { position:absolute; width:52px; height:52px; border-radius:50%; background:rgba(0,0,0,0.55); border:2px solid rgba(255,255,255,0.6); color:#fff; font-size:22px; font-weight:bold; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; touch-action:none; }";
+  css += ".joy-btn:active { background:rgba(255,215,0,0.7); color:#000; }";
+  css += "#joy-up { left:49px; top:0; }";
+  css += "#joy-down { left:49px; bottom:0; }";
+  css += "#joy-left { left:0; top:49px; }";
+  css += "#joy-right { right:0; top:49px; }";
+  css += "@media (max-height:450px) { #hud-top-left { width:230px; } #hud-bottom-right { width:170px; height:170px; transform:scale(0.85); transform-origin:bottom right; } #window-personaje { width:94vw; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
 
   var style = document.createElement("style");
   style.textContent = css;
@@ -94,6 +105,12 @@
     + "<div class='bar-bg'><div id='hp-fill'></div></div>"
     + "<div class='bar-label'><span>MP</span><span id='mp-text'>0 / 0</span></div>"
     + "<div class='bar-bg'><div id='mp-fill'></div></div>"
+    + "</div>"
+    + "<div id='joypad'>"
+    + "<div class='joy-btn' id='joy-up'>↑</div>"
+    + "<div class='joy-btn' id='joy-down'>↓</div>"
+    + "<div class='joy-btn' id='joy-left'>←</div>"
+    + "<div class='joy-btn' id='joy-right'>→</div>"
     + "</div>"
     + "<div id='hud-bottom-center'>"
     + "<button class='tab-btn' id='tab-inventario'>Inventario</button>"
@@ -328,12 +345,61 @@
     })(k);
   }
 
+  // ===== PAD DE MOVIMIENTO =====
+  var joyHeld = { up: false, down: false, left: false, right: false };
+  function updateMoveInput() {
+    var x = 0, y = 0;
+    if (joyHeld.left) x -= 1;
+    if (joyHeld.right) x += 1;
+    if (joyHeld.up) y -= 1;
+    if (joyHeld.down) y += 1;
+    window.moveInput.x = x;
+    window.moveInput.y = y;
+  }
+  function bindJoy(id, keyName) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    function start(e) { if (e) e.preventDefault(); joyHeld[keyName] = true; updateMoveInput(); }
+    function end(e) { if (e) e.preventDefault(); joyHeld[keyName] = false; updateMoveInput(); }
+    btn.addEventListener("touchstart", start, { passive: false });
+    btn.addEventListener("touchend", end, { passive: false });
+    btn.addEventListener("touchcancel", end, { passive: false });
+    btn.addEventListener("mousedown", start);
+    btn.addEventListener("mouseup", end);
+    btn.addEventListener("mouseleave", end);
+  }
+  bindJoy("joy-up", "up");
+  bindJoy("joy-down", "down");
+  bindJoy("joy-left", "left");
+  bindJoy("joy-right", "right");
+
+  // Teclado para probar en PC: WASD y flechas
+  var keysHeld = {};
   document.addEventListener("keydown", function(e) {
     var key = e.key.toLowerCase();
+    keysHeld[key] = true;
     if (key === "i") toggleWindow("window-inventario", "tab-inventario");
     if (key === "p") toggleWindow("window-personaje", "tab-personaje");
     if (key === "k") toggleWindow("window-skills", "tab-skills");
     if (key === "escape") closeAll();
+    var x = 0, y = 0;
+    if (keysHeld["a"] || keysHeld["arrowleft"]) x -= 1;
+    if (keysHeld["d"] || keysHeld["arrowright"]) x += 1;
+    if (keysHeld["w"] || keysHeld["arrowup"]) y -= 1;
+    if (keysHeld["s"] || keysHeld["arrowdown"]) y += 1;
+    if (x !== 0 || y !== 0) { window.moveInput.x = x; window.moveInput.y = y; }
+  });
+  document.addEventListener("keyup", function(e) {
+    var key = e.key.toLowerCase();
+    keysHeld[key] = false;
+    var x = 0, y = 0;
+    if (keysHeld["a"] || keysHeld["arrowleft"]) x -= 1;
+    if (keysHeld["d"] || keysHeld["arrowright"]) x += 1;
+    if (keysHeld["w"] || keysHeld["arrowup"]) y -= 1;
+    if (keysHeld["s"] || keysHeld["arrowdown"]) y += 1;
+    if (joyHeld.up || joyHeld.down || joyHeld.left || joyHeld.right) { updateMoveInput(); return; }
+    window.moveInput.x = x;
+    window.moveInput.y = y;
   });
 
   renderInventory();
