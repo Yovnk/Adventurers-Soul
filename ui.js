@@ -1,5 +1,5 @@
-// ui.js - SOLO HUD ARREGLADO, NADA GENERICO TOCADO
-// Es tu mismo archivo viejo, solo cambian: posiciones skills, barra mas chica, nombre, pad con deslizar.
+// ui.js - SOLO HUD, 3 ARREGLOS. NADA GENERICO.
+// 1: Skills estilo Mobile Legends. 2: Personaje mas angosto. 3: Inventario mas chico + no cierra Personaje.
 
 (function() {
   function getCharacter() {
@@ -15,7 +15,6 @@
   css += "#game-world { width:100vw; height:100vh; position:relative; background:#1a2a1a; }";
   css += "#game-canvas { width:100%; height:100%; display:block; background:#2a4a2a; }";
   css += "#hud { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }";
-  // BARRA MAS CHICA
   css += "#hud-top-left { position:absolute; top:10px; left:10px; width:210px; max-width:32vw; background:rgba(0,0,0,0.65); border:2px solid #555; border-radius:8px; padding:6px 8px; pointer-events:auto; }";
   css += "#hud-name { font-size:14px; font-weight:bold; color:#ffd700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }";
   css += "#hud-class { font-size:11px; color:#aaa; margin-bottom:4px; }";
@@ -23,44 +22,46 @@
   css += ".bar-bg { width:100%; height:10px; background:#222; border:1px solid #000; border-radius:4px; overflow:hidden; margin-top:1px; }";
   css += "#hp-fill { height:100%; width:100%; background:linear-gradient(90deg,#d32f2f,#ff5252); }";
   css += "#mp-fill { height:100%; width:100%; background:linear-gradient(90deg,#1976d2,#42a5f5); }";
-  css += "#hud-bottom-center { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; }";
+  css += "#hud-bottom-center { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; z-index:6; }";
   css += ".tab-btn { background:#2a2a35; border:2px solid #666; color:#fff; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:bold; font-size:13px; white-space:nowrap; }";
   css += ".tab-btn.active { background:#ffd700; color:#000; border-color:#ffd700; }";
-  // CONTENEDOR MAS GRANDE PARA QUE NO SE TAPEN
-  css += "#hud-bottom-right { position:absolute; bottom:10px; right:10px; width:240px; height:200px; pointer-events:auto; }";
-  css += ".skill-btn { position:absolute; width:48px; height:48px; border-radius:50%; background:#222; border:2px solid #888; color:#fff; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; }";
+  // 1. SKILLS ML: grupo subido para que no lo tape la barra del medio
+  css += "#hud-bottom-right { position:absolute; bottom:52px; right:10px; width:260px; height:190px; pointer-events:auto; z-index:5; }";
+  css += ".skill-btn { position:absolute; width:48px; height:48px; border-radius:50%; background:#222; border:2px solid #888; color:#fff; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; z-index:2; }";
   css += ".skill-btn:active { transform:scale(0.92); }";
   css += ".skill-btn.empty { opacity:0.45; }";
-  css += "#btn-basic { position:absolute; right:0; bottom:0; width:76px; height:76px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ff7043, #bf360c); border:3px solid #fff; color:#fff; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.6); }";
+  css += "#btn-basic { position:absolute; right:0; bottom:0; width:84px; height:84px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ff7043, #bf360c); border:3px solid #fff; color:#fff; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.6); z-index:1; }";
   css += "#btn-basic:active { transform:scale(0.93); }";
-  // 3 Y 3, EN ARCO ALREDEDOR DEL BASICO, SIN TAPARSE
-  css += "#skill-1 { left:0; top:6px; }";
-  css += "#skill-2 { left:54px; top:0; }";
-  css += "#skill-3 { left:108px; top:6px; }";
-  css += "#skill-4 { left:0; top:104px; }";
-  css += "#skill-5 { left:54px; top:96px; }";
-  css += "#skill-6 { left:108px; top:104px; }";
+  // Arco ML: 3 arriba, 3 en medio, todas a la izquierda / arriba del BASICO
+  css += "#skill-1 { left:10px; top:0; }";
+  css += "#skill-2 { left:68px; top:0; }";
+  css += "#skill-3 { left:126px; top:10px; }";
+  css += "#skill-4 { left:0; top:62px; }";
+  css += "#skill-5 { left:58px; top:58px; }";
+  css += "#skill-6 { left:112px; top:66px; }";
   css += ".window { position:absolute; background:#e8e0d0; color:#222; border:3px solid #7a6a4a; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.7); display:none; pointer-events:auto; z-index:10; }";
   css += ".window.open { display:block; }";
   css += ".window-header { background:#3a3a5a; color:#fff; padding:8px 12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-radius:5px 5px 0 0; }";
   css += ".window-close { background:#c62828; border:none; color:#fff; width:24px; height:24px; border-radius:4px; cursor:pointer; font-weight:bold; }";
-  css += ".window-body { padding:12px; overflow-y:auto; max-height:72vh; }";
-  css += "#window-personaje { top:50%; left:50%; transform:translate(-50%,-50%); width:680px; max-width:94vw; }";
-  css += "#personaje-layout { display:flex; gap:14px; }";
-  css += "#equip-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:260px; flex-shrink:0; }";
-  css += ".equip-slot { background:#fff; border:2px solid #999; border-radius:6px; padding:8px; min-height:52px; cursor:pointer; }";
+  css += ".window-body { padding:10px; overflow-y:auto; max-height:72vh; }";
+  // 2. PERSONAJE MAS ANGOSTO: 680 -> 520, sin hueco a la derecha
+  css += "#window-personaje { top:50%; left:31%; transform:translate(-50%,-50%); width:520px; max-width:58vw; }";
+  css += "#personaje-layout { display:flex; gap:10px; }";
+  css += "#equip-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; width:230px; flex-shrink:0; }";
+  css += ".equip-slot { background:#fff; border:2px solid #999; border-radius:6px; padding:6px; min-height:48px; cursor:pointer; }";
   css += ".equip-slot.selected { border-color:#1976d2; background:#e3f2fd; }";
   css += ".equip-slot-name { font-size:11px; color:#888; }";
   css += ".equip-slot-item { font-size:13px; font-weight:bold; }";
   css += ".equip-slot-empty { font-size:12px; color:#bbb; }";
-  css += "#stats-col { flex:1; }";
+  css += "#stats-col { width:230px; flex-shrink:0; }";
   css += ".stat-section { background:#3a3a5a; color:#fff; padding:5px 8px; margin:0 0 6px 0; font-size:12px; font-weight:bold; }";
   css += ".stat-row { display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #ccc; font-size:13px; }";
-  css += "#window-inventario { top:50%; left:50%; transform:translate(-50%,-50%); width:480px; max-width:94vw; }";
-  css += "#inv-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; }";
-  css += ".inv-slot { width:100%; aspect-ratio:1; background:#fff; border:2px solid #999; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:20px; }";
+  // 3. INVENTARIO MAS CHICO: 480 -> 340, a la derecha para que conviva con Personaje
+  css += "#window-inventario { top:50%; left:76%; transform:translate(-50%,-50%); width:340px; max-width:38vw; }";
+  css += "#inv-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; }";
+  css += ".inv-slot { width:100%; aspect-ratio:1; background:#fff; border:2px solid #999; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }";
   css += ".inv-slot.selected { border-color:#1976d2; background:#e3f2fd; }";
-  css += "#inv-info { margin-top:10px; font-size:12px; min-height:18px; color:#555; }";
+  css += "#inv-info { margin-top:8px; font-size:12px; min-height:18px; color:#555; }";
   css += "#window-skills { top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:94vw; }";
   css += ".skill-row { display:flex; justify-content:space-between; padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; margin-bottom:6px; font-size:13px; }";
   css += "#skills-empty { font-size:13px; color:#666; text-align:center; padding:14px 0; }";
@@ -71,7 +72,7 @@
   css += "#joy-down { left:49px; bottom:0; }";
   css += "#joy-left { left:0; top:49px; }";
   css += "#joy-right { right:0; top:49px; }";
-  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:210px; height:180px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:94vw; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
+  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:230px; height:170px; bottom:46px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:94vw; left:50%; } #window-inventario { width:94vw; left:50%; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
 
   var style = document.createElement("style");
   style.textContent = css;
@@ -192,14 +193,11 @@
   function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
 
   function getHeroName(c) {
-    // 1. Lo que guardo main.js al entrar: personajeActual = { name: "TuNombre", ... }
     try {
       var saved = JSON.parse(localStorage.getItem('personajeActual') || '{}');
       if (saved && saved.name) return saved.name;
     } catch(e) {}
-    // 2. Si no hay guardado, usar el nombre del personaje si no es igual a la clase
     if (c && c.name && c.name !== c.className) return c.name;
-    // 3. Si no hay nada, mostrar la clase como antes para no romper
     return c ? c.className : "Personaje";
   }
 
@@ -299,24 +297,39 @@
     renderSkills();
     renderEquipment();
   }
+
+  // 3. VENTANAS INDEPENDIENTES: abrir una no cierra la otra
   function closeAll() {
     var wins = document.querySelectorAll(".window");
     for (var i = 0; i < wins.length; i++) { wins[i].classList.remove("open"); }
     var tabs = document.querySelectorAll(".tab-btn");
     for (var j = 0; j < tabs.length; j++) { tabs[j].classList.remove("active"); }
   }
+  function closeOne(id, tabId) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove("open");
+    var tab = document.getElementById(tabId);
+    if (tab) tab.classList.remove("active");
+  }
   function toggleWindow(id, tabId) {
     var el = document.getElementById(id);
+    if (!el) return;
     var wasOpen = el.classList.contains("open");
-    closeAll();
-    if (!wasOpen) { el.classList.add("open"); var tab = document.getElementById(tabId); if (tab) tab.classList.add("active"); }
+    // NO llamamos a closeAll: asi Inventario y Personaje pueden estar abiertos juntos para arrastrar
+    if (wasOpen) {
+      closeOne(id, tabId);
+    } else {
+      el.classList.add("open");
+      var tab = document.getElementById(tabId);
+      if (tab) tab.classList.add("active");
+    }
   }
   document.getElementById("tab-inventario").onclick = function() { toggleWindow("window-inventario", "tab-inventario"); };
   document.getElementById("tab-personaje").onclick = function() { toggleWindow("window-personaje", "tab-personaje"); };
   document.getElementById("tab-skills").onclick = function() { toggleWindow("window-skills", "tab-skills"); };
-  document.getElementById("close-personaje").onclick = function() { closeAll(); };
-  document.getElementById("close-inventario").onclick = function() { closeAll(); };
-  document.getElementById("close-skills").onclick = function() { closeAll(); };
+  document.getElementById("close-personaje").onclick = function() { closeOne("window-personaje", "tab-personaje"); };
+  document.getElementById("close-inventario").onclick = function() { closeOne("window-inventario", "tab-inventario"); };
+  document.getElementById("close-skills").onclick = function() { closeOne("window-skills", "tab-skills"); };
   document.getElementById("btn-basic").onclick = function() { if (window.onBasicAttack) window.onBasicAttack(); };
   for (var k = 1; k <= 6; k++) {
     (function(n) { document.getElementById("skill-" + n).onclick = function() { if (window.onSkill) window.onSkill(n); }; })(k);
