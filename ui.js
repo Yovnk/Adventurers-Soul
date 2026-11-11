@@ -1,52 +1,45 @@
-// ui.js
-// UI generica. No diferencia clases.
-// Muestra el personaje que cargo characterdata.js.
-// 11 slots iguales, todos vacios. Inventario vacio.
-// El item que dropee / craftee llena los slots.
+// ui.js - SOLO HUD ARREGLADO, NADA GENERICO TOCADO
+// Es tu mismo archivo viejo, solo cambian: posiciones skills, barra mas chica, nombre, pad con deslizar.
 
 (function() {
-
-  // El personaje activo es el que venga de characterdata.js
-  // No se cambia de clase desde la UI.
   function getCharacter() {
     if (window.currentCharacter) return window.currentCharacter;
     if (window.paladin) return window.paladin;
     return null;
   }
-
-  // Movimiento: lo lee main.js para mover al personaje
-  // x: -1 izquierda, 1 derecha. y: -1 arriba, 1 abajo
   window.moveInput = { x: 0, y: 0 };
 
-  // ===== ESTILOS =====
   var css = "";
   css += "* { margin:0; padding:0; box-sizing:border-box; font-family: Tahoma, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }";
   css += "body { background:#0a0a0f; overflow:hidden; color:#fff; }";
   css += "#game-world { width:100vw; height:100vh; position:relative; background:#1a2a1a; }";
   css += "#game-canvas { width:100%; height:100%; display:block; background:#2a4a2a; }";
   css += "#hud { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }";
-  css += "#hud-top-left { position:absolute; top:10px; left:10px; width:300px; max-width:42vw; background:rgba(0,0,0,0.65); border:2px solid #555; border-radius:8px; padding:8px 10px; pointer-events:auto; }";
-  css += "#hud-name { font-size:15px; font-weight:bold; color:#ffd700; }";
-  css += "#hud-class { font-size:11px; color:#aaa; margin-bottom:6px; }";
-  css += ".bar-label { font-size:11px; display:flex; justify-content:space-between; margin-top:3px; }";
-  css += ".bar-bg { width:100%; height:16px; background:#222; border:1px solid #000; border-radius:4px; overflow:hidden; margin-top:2px; }";
+  // BARRA MAS CHICA
+  css += "#hud-top-left { position:absolute; top:10px; left:10px; width:210px; max-width:32vw; background:rgba(0,0,0,0.65); border:2px solid #555; border-radius:8px; padding:6px 8px; pointer-events:auto; }";
+  css += "#hud-name { font-size:14px; font-weight:bold; color:#ffd700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }";
+  css += "#hud-class { font-size:11px; color:#aaa; margin-bottom:4px; }";
+  css += ".bar-label { font-size:10px; display:flex; justify-content:space-between; margin-top:2px; }";
+  css += ".bar-bg { width:100%; height:10px; background:#222; border:1px solid #000; border-radius:4px; overflow:hidden; margin-top:1px; }";
   css += "#hp-fill { height:100%; width:100%; background:linear-gradient(90deg,#d32f2f,#ff5252); }";
   css += "#mp-fill { height:100%; width:100%; background:linear-gradient(90deg,#1976d2,#42a5f5); }";
   css += "#hud-bottom-center { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; }";
   css += ".tab-btn { background:#2a2a35; border:2px solid #666; color:#fff; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:bold; font-size:13px; white-space:nowrap; }";
   css += ".tab-btn.active { background:#ffd700; color:#000; border-color:#ffd700; }";
-  css += "#hud-bottom-right { position:absolute; bottom:10px; right:10px; width:210px; height:210px; pointer-events:auto; }";
-  css += ".skill-btn { position:absolute; width:52px; height:52px; border-radius:50%; background:#222; border:2px solid #888; color:#fff; font-size:11px; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; }";
+  // CONTENEDOR MAS GRANDE PARA QUE NO SE TAPEN
+  css += "#hud-bottom-right { position:absolute; bottom:10px; right:10px; width:240px; height:200px; pointer-events:auto; }";
+  css += ".skill-btn { position:absolute; width:48px; height:48px; border-radius:50%; background:#222; border:2px solid #888; color:#fff; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; }";
   css += ".skill-btn:active { transform:scale(0.92); }";
   css += ".skill-btn.empty { opacity:0.45; }";
-  css += "#btn-basic { position:absolute; right:0; bottom:0; width:86px; height:86px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ff7043, #bf360c); border:3px solid #fff; color:#fff; font-size:14px; font-weight:bold; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.6); }";
+  css += "#btn-basic { position:absolute; right:0; bottom:0; width:76px; height:76px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ff7043, #bf360c); border:3px solid #fff; color:#fff; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.6); }";
   css += "#btn-basic:active { transform:scale(0.93); }";
-  css += "#skill-1 { left:0; top:20px; }";
-  css += "#skill-2 { left:58px; top:0; }";
-  css += "#skill-3 { left:118px; top:8px; }";
-  css += "#skill-4 { left:10px; top:92px; }";
-  css += "#skill-5 { left:68px; top:72px; }";
-  css += "#skill-6 { left:118px; top:78px; }";
+  // 3 Y 3, EN ARCO ALREDEDOR DEL BASICO, SIN TAPARSE
+  css += "#skill-1 { left:0; top:6px; }";
+  css += "#skill-2 { left:54px; top:0; }";
+  css += "#skill-3 { left:108px; top:6px; }";
+  css += "#skill-4 { left:0; top:104px; }";
+  css += "#skill-5 { left:54px; top:96px; }";
+  css += "#skill-6 { left:108px; top:104px; }";
   css += ".window { position:absolute; background:#e8e0d0; color:#222; border:3px solid #7a6a4a; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.7); display:none; pointer-events:auto; z-index:10; }";
   css += ".window.open { display:block; }";
   css += ".window-header { background:#3a3a5a; color:#fff; padding:8px 12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-radius:5px 5px 0 0; }";
@@ -71,20 +64,19 @@
   css += "#window-skills { top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:94vw; }";
   css += ".skill-row { display:flex; justify-content:space-between; padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; margin-bottom:6px; font-size:13px; }";
   css += "#skills-empty { font-size:13px; color:#666; text-align:center; padding:14px 0; }";
-  css += "#joypad { position:absolute; bottom:10px; left:10px; width:150px; height:150px; pointer-events:auto; z-index:5; }";
-  css += ".joy-btn { position:absolute; width:52px; height:52px; border-radius:50%; background:rgba(0,0,0,0.55); border:2px solid rgba(255,255,255,0.6); color:#fff; font-size:22px; font-weight:bold; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; touch-action:none; }";
-  css += ".joy-btn:active { background:rgba(255,215,0,0.7); color:#000; }";
+  css += "#joypad { position:absolute; bottom:10px; left:10px; width:150px; height:150px; pointer-events:auto; z-index:5; touch-action:none; }";
+  css += ".joy-btn { position:absolute; width:52px; height:52px; border-radius:50%; background:rgba(0,0,0,0.55); border:2px solid rgba(255,255,255,0.6); color:#fff; font-size:22px; font-weight:bold; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; touch-action:none; pointer-events:none; }";
+  css += ".joy-btn.active { background:rgba(255,215,0,0.7); color:#000; }";
   css += "#joy-up { left:49px; top:0; }";
   css += "#joy-down { left:49px; bottom:0; }";
   css += "#joy-left { left:0; top:49px; }";
   css += "#joy-right { right:0; top:49px; }";
-  css += "@media (max-height:450px) { #hud-top-left { width:230px; } #hud-bottom-right { width:170px; height:170px; transform:scale(0.85); transform-origin:bottom right; } #window-personaje { width:94vw; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
+  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:210px; height:180px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:94vw; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
 
   var style = document.createElement("style");
   style.textContent = css;
   document.head.appendChild(style);
 
-  // ===== HTML =====
   var gameWorld = document.getElementById("game-world");
   if (!gameWorld) {
     gameWorld = document.createElement("div");
@@ -178,7 +170,6 @@
     + "<div class='window-body'><div id='skills-list'></div><div id='skills-empty'>Sin skills por ahora.</div></div>";
   gameWorld.appendChild(wSkills);
 
-  // ===== 11 SLOTS - IGUALES PARA TODOS =====
   var EQUIP_SLOTS = [
     { key: "casco", label: "Casco" },
     { key: "pechera", label: "Pechera" },
@@ -192,18 +183,24 @@
     { key: "accesorio1", label: "Accesorio 1" },
     { key: "accesorio2", label: "Accesorio 2" }
   ];
-
   var equipment = {};
   for (var e = 0; e < EQUIP_SLOTS.length; e++) { equipment[EQUIP_SLOTS[e].key] = null; }
-
   var inventory = [];
   for (var i = 0; i < 24; i++) { inventory.push(null); }
-
   var selectedEquipKey = null;
 
-  function setText(id, val) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = val;
+  function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+
+  function getHeroName(c) {
+    // 1. Lo que guardo main.js al entrar: personajeActual = { name: "TuNombre", ... }
+    try {
+      var saved = JSON.parse(localStorage.getItem('personajeActual') || '{}');
+      if (saved && saved.name) return saved.name;
+    } catch(e) {}
+    // 2. Si no hay guardado, usar el nombre del personaje si no es igual a la clase
+    if (c && c.name && c.name !== c.className) return c.name;
+    // 3. Si no hay nada, mostrar la clase como antes para no romper
+    return c ? c.className : "Personaje";
   }
 
   function renderEquipment() {
@@ -222,7 +219,6 @@
       })(EQUIP_SLOTS[i]);
     }
   }
-
   function renderInventory() {
     var grid = document.getElementById("inv-grid");
     if (!grid) return;
@@ -242,7 +238,6 @@
       })(i);
     }
   }
-
   function renderSkills() {
     var c = getCharacter();
     if (!c || !c.data) return;
@@ -261,24 +256,19 @@
     for (var k = 1; k <= 6; k++) {
       var btn = document.getElementById("skill-" + k);
       if (!btn) continue;
-      if (skills[k - 1]) {
-        btn.textContent = skills[k - 1].name;
-        btn.classList.remove("empty");
-      } else {
-        btn.textContent = "Skill " + k;
-        btn.classList.add("empty");
-      }
+      if (skills[k - 1]) { btn.textContent = skills[k - 1].name; btn.classList.remove("empty"); }
+      else { btn.textContent = "Skill " + k; btn.classList.add("empty"); }
     }
   }
-
   function updateUI() {
     var c = getCharacter();
     if (!c) return;
     var p = c.primary;
     var s = c.secondary;
-    setText("hud-name", c.className);
+    var heroName = getHeroName(c);
+    setText("hud-name", heroName);
     setText("hud-class", "Nv. 1 - " + c.className);
-    setText("personaje-title", "Personaje - " + c.className);
+    setText("personaje-title", "Personaje - " + heroName);
     setText("hp-text", Math.floor(c.hp) + " / " + s.maxHP);
     setText("mp-text", Math.floor(c.mp) + " / " + s.maxMP);
     var hpFill = document.getElementById("hp-fill");
@@ -309,7 +299,6 @@
     renderSkills();
     renderEquipment();
   }
-
   function closeAll() {
     var wins = document.querySelectorAll(".window");
     for (var i = 0; i < wins.length; i++) { wins[i].classList.remove("open"); }
@@ -320,60 +309,80 @@
     var el = document.getElementById(id);
     var wasOpen = el.classList.contains("open");
     closeAll();
-    if (!wasOpen) {
-      el.classList.add("open");
-      var tab = document.getElementById(tabId);
-      if (tab) tab.classList.add("active");
-    }
+    if (!wasOpen) { el.classList.add("open"); var tab = document.getElementById(tabId); if (tab) tab.classList.add("active"); }
   }
-
   document.getElementById("tab-inventario").onclick = function() { toggleWindow("window-inventario", "tab-inventario"); };
   document.getElementById("tab-personaje").onclick = function() { toggleWindow("window-personaje", "tab-personaje"); };
   document.getElementById("tab-skills").onclick = function() { toggleWindow("window-skills", "tab-skills"); };
   document.getElementById("close-personaje").onclick = function() { closeAll(); };
   document.getElementById("close-inventario").onclick = function() { closeAll(); };
   document.getElementById("close-skills").onclick = function() { closeAll(); };
-
-  document.getElementById("btn-basic").onclick = function() {
-    if (window.onBasicAttack) window.onBasicAttack();
-  };
+  document.getElementById("btn-basic").onclick = function() { if (window.onBasicAttack) window.onBasicAttack(); };
   for (var k = 1; k <= 6; k++) {
-    (function(n) {
-      document.getElementById("skill-" + n).onclick = function() {
-        if (window.onSkill) window.onSkill(n);
-      };
-    })(k);
+    (function(n) { document.getElementById("skill-" + n).onclick = function() { if (window.onSkill) window.onSkill(n); }; })(k);
   }
 
-  // ===== PAD DE MOVIMIENTO =====
-  var joyHeld = { up: false, down: false, left: false, right: false };
-  function updateMoveInput() {
+  // PAD CON DESLIZAR - misma variable window.moveInput que lee main.js
+  var joypadEl = document.getElementById("joypad");
+  var joyActive = false;
+  var joyTouchId = null;
+  function setJoyVisual(x, y) {
+    var up = document.getElementById("joy-up");
+    var down = document.getElementById("joy-down");
+    var left = document.getElementById("joy-left");
+    var right = document.getElementById("joy-right");
+    if (up) up.classList.toggle("active", y < 0);
+    if (down) down.classList.toggle("active", y > 0);
+    if (left) left.classList.toggle("active", x < 0);
+    if (right) right.classList.toggle("active", x > 0);
+  }
+  function updateJoyFromPoint(clientX, clientY) {
+    if (!joypadEl) return;
+    var rect = joypadEl.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top + rect.height / 2;
+    var dx = clientX - cx;
+    var dy = clientY - cy;
+    var dead = 12;
     var x = 0, y = 0;
-    if (joyHeld.left) x -= 1;
-    if (joyHeld.right) x += 1;
-    if (joyHeld.up) y -= 1;
-    if (joyHeld.down) y += 1;
+    if (dx > dead) x = 1;
+    if (dx < -dead) x = -1;
+    if (dy > dead) y = 1;
+    if (dy < -dead) y = -1;
     window.moveInput.x = x;
     window.moveInput.y = y;
+    setJoyVisual(x, y);
   }
-  function bindJoy(id, keyName) {
-    var btn = document.getElementById(id);
-    if (!btn) return;
-    function start(e) { if (e) e.preventDefault(); joyHeld[keyName] = true; updateMoveInput(); }
-    function end(e) { if (e) e.preventDefault(); joyHeld[keyName] = false; updateMoveInput(); }
-    btn.addEventListener("touchstart", start, { passive: false });
-    btn.addEventListener("touchend", end, { passive: false });
-    btn.addEventListener("touchcancel", end, { passive: false });
-    btn.addEventListener("mousedown", start);
-    btn.addEventListener("mouseup", end);
-    btn.addEventListener("mouseleave", end);
+  function joyEnd(e) {
+    joyActive = false;
+    joyTouchId = null;
+    window.moveInput.x = 0;
+    window.moveInput.y = 0;
+    setJoyVisual(0, 0);
+    if (e) e.preventDefault();
   }
-  bindJoy("joy-up", "up");
-  bindJoy("joy-down", "down");
-  bindJoy("joy-left", "left");
-  bindJoy("joy-right", "right");
+  if (joypadEl) {
+    joypadEl.addEventListener("touchstart", function(e) {
+      if (e) e.preventDefault();
+      var t = e.changedTouches[0];
+      joyActive = true;
+      joyTouchId = t.identifier;
+      updateJoyFromPoint(t.clientX, t.clientY);
+    }, { passive: false });
+    joypadEl.addEventListener("touchmove", function(e) {
+      if (!joyActive) return;
+      if (e) e.preventDefault();
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joyTouchId) updateJoyFromPoint(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+      }
+    }, { passive: false });
+    joypadEl.addEventListener("touchend", joyEnd, { passive: false });
+    joypadEl.addEventListener("touchcancel", joyEnd, { passive: false });
+    joypadEl.addEventListener("mousedown", function(e) { joyActive = true; updateJoyFromPoint(e.clientX, e.clientY); });
+    document.addEventListener("mousemove", function(e) { if (!joyActive) return; updateJoyFromPoint(e.clientX, e.clientY); });
+    document.addEventListener("mouseup", function() { if (!joyActive) return; joyEnd(); });
+  }
 
-  // Teclado para probar en PC: WASD y flechas
   var keysHeld = {};
   document.addEventListener("keydown", function(e) {
     var key = e.key.toLowerCase();
@@ -397,26 +406,14 @@
     if (keysHeld["d"] || keysHeld["arrowright"]) x += 1;
     if (keysHeld["w"] || keysHeld["arrowup"]) y -= 1;
     if (keysHeld["s"] || keysHeld["arrowdown"]) y += 1;
-    if (joyHeld.up || joyHeld.down || joyHeld.left || joyHeld.right) { updateMoveInput(); return; }
+    if (joyActive) return;
     window.moveInput.x = x;
     window.moveInput.y = y;
   });
 
   renderInventory();
   renderEquipment();
-
-  if (window.characterReady) {
-    window.characterReady.then(function() { updateUI(); });
-  } else {
-    setTimeout(updateUI, 500);
-  }
+  if (window.characterReady) { window.characterReady.then(function() { updateUI(); }); } else { setTimeout(updateUI, 500); }
   setInterval(updateUI, 500);
-
-  window.UI = {
-    update: updateUI,
-    equipment: equipment,
-    inventory: inventory,
-    closeAll: closeAll
-  };
-
+  window.UI = { update: updateUI, equipment: equipment, inventory: inventory, closeAll: closeAll };
 })();
