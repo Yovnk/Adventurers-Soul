@@ -24,7 +24,6 @@ let currentUser = null;
 let slots = [null, null, null]; // 3 slots
 
 // --- 1. BLOQUEO VERTICAL + PANTALLA COMPLETA ---
-// El juego es HORIZONTAL. Si lo tenés en vertical, muestra el cartel.
 function checkOrientation() {
   const isPortrait = window.innerHeight > window.innerWidth;
   if (isPortrait) {
@@ -46,7 +45,6 @@ function goFullscreen() {
 }
 document.addEventListener('click', goFullscreen, { once: true });
 
-// Oculta el mundo mientras estamos en login / slots (ui.js ya lo creó desde index.html)
 function hideWorld() {
   const gw = document.getElementById('game-world');
   if (gw) gw.style.display = 'none';
@@ -173,11 +171,17 @@ async function enterWorld(personaje) {
   }
 }
 
-// --- 5. DIBUJAR MAPA + SPRITE ---
+// --- 5. DIBUJAR MAPA + SPRITE + MOVER CON EL PAD ---
+// Aca es donde se conecta con ui.js: leemos window.moveInput que deja el pad
 let gameLoopStarted = false;
-let spriteImg = null;
+let playerX = 1920;
+let playerY = 1920;
+let facingRight = true;
+let currentAnim = "idle";
 let spriteFrame = 0;
 let lastFrameTime = 0;
+let idleImg = null;
+let runImg = null;
 
 function startGameLoop() {
   if (gameLoopStarted) return;
@@ -188,35 +192,81 @@ function startGameLoop() {
   const ctx = canvas.getContext('2d');
 
   const char = window.currentCharacter;
-  if (!char || !char.data || !char.data.sprites || !char.data.sprites.idle) return;
-  const spriteData = char.data.sprites.idle;
-  spriteImg = new Image();
-  spriteImg.src = spriteData.src;
+  if (!char || !char.data || !char.data.sprites) return;
+
+  idleImg = new Image();
+  idleImg.src = char.data.sprites.idle.src;
+  runImg = new Image();
+  runImg.src = char.data.sprites.run.src;
 
   function loop(timestamp) {
     if (canvas.width !== window.innerWidth) canvas.width = window.innerWidth;
     if (canvas.height !== window.innerHeight) canvas.height = window.innerHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const map = window.ElarionMap;
-    if (map && map.image && map.image.complete && map.image.naturalWidth > 0) {
-      ctx.drawImage(map.image, 0, 0, map.pixelWidth, map.pixelHeight);
+    // Leemos el pad de ui.js
+    const input = window.moveInput || { x: 0, y: 0 };
+    const isMoving = input.x !== 0 || input.y !== 0;
+    const speed = 3;
+
+    if (isMoving) {
+      playerX += input.x * speed;
+      playerY += input.y * speed;
+      if (input.x > 0) facingRight = true;
+      if (input.x < 0) facingRight = false;
+      if (currentAnim !== "run") { currentAnim = "run"; spriteFrame = 0; lastFrameTime = timestamp; }
+    } else {
+      if (currentAnim !== "idle") { currentAnim = "idle"; spriteFrame = 0; lastFrameTime = timestamp; }
     }
 
-    if (spriteImg.complete && spriteImg.naturalWidth > 0) {
+    // Limites del mapa para no salirse
+    const map = window.ElarionMap;
+    const mapW = map ? map.pixelWidth : 3840;
+    const mapH = map ? map.pixelHeight : 3840;
+    if (playerX < 0) playerX = 0;
+    if (playerY < 0) playerY = 0;
+    if (playerX > mapW) playerX = mapW;
+    if (playerY > mapH) playerY = mapH;
+
+    // Camara: el personaje queda siempre en el centro, el mapa se mueve
+    let camX = playerX - canvas.width / 2;
+    let camY = playerY - canvas.height / 2;
+    if (camX < 0) camX = 0;
+    if (camY < 0) camY = 0;
+    if (camX > mapW - canvas.width) camX = Math.max(0, mapW - canvas.width);
+    if (camY > mapH - canvas.height) camY = Math.max(0, mapH - canvas.height);
+
+    if (map && map.image && map.image.complete && map.image.naturalWidth > 0) {
+      ctx.drawImage(map.image, -camX, -camY, map.pixelWidth, map.pixelHeight);
+    }
+
+    // Elegimos que animacion dibujar
+    const animData = currentAnim === "run" ? char.data.sprites.run : char.data.sprites.idle;
+    const img = currentAnim === "run" ? runImg : idleImg;
+    if (img && img.complete && img.naturalWidth > 0) {
       const fw = char.data.frameWidth;
       const fh = char.data.frameHeight;
-      const frames = spriteData.useFrames;
-      if (timestamp - lastFrameTime > spriteData.frameDuration) {
+      const frames = animData.useFrames;
+      if (timestamp - lastFrameTime > animData.frameDuration) {
         spriteFrame = (spriteFrame + 1) % frames.length;
         lastFrameTime = timestamp;
       }
       const frameIndex = frames[spriteFrame] - 1;
       const sx = frameIndex * fw;
-      const dx = canvas.width / 2 - (fw * 2);
-      const dy = canvas.height / 2 - (fh * 2);
+      const drawW = fw * 4;
+      const drawH = fh * 4;
+      const dx = canvas.width / 2 - drawW / 2;
+      const dy = canvas.height / 2 - drawH / 2;
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(spriteImg, sx, 0, fw, fh, dx, dy, fw * 4, fh * 4);
+      ctx.save();
+      if (!facingRight) {
+        ctx.translate(canvas.width / 2, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, sx, 0, fw, fh, -drawW / 2, dy, drawW, drawH);
+      } else {
+        ctx.drawImage(img, sx, 0, fw, fh, dx, dy, drawW, drawH);
+      }
+      ctx.restore();
     }
     requestAnimationFrame(loop);
   }
