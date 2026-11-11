@@ -171,11 +171,14 @@ async function enterWorld(personaje) {
   }
 }
 
-// --- 5. DIBUJAR MAPA + SPRITE ENTERO SIN RECORTAR + MOVER CON EL PAD ---
+// --- 5. DIBUJAR MAPA + 1 SOLO SPRITE ANIMADO SEGUN PERSONALDATA.JS + MOVER CON EL PAD ---
 let gameLoopStarted = false;
 let playerX = 1920;
 let playerY = 1920;
 let facingRight = true;
+let currentAnim = "idle";
+let spriteFrame = 0;
+let lastFrameTime = 0;
 let idleImg = null;
 let runImg = null;
 
@@ -195,7 +198,7 @@ function startGameLoop() {
   runImg = new Image();
   runImg.src = char.data.sprites.run.src;
 
-  function loop() {
+  function loop(timestamp) {
     if (canvas.width !== window.innerWidth) canvas.width = window.innerWidth;
     if (canvas.height !== window.innerHeight) canvas.height = window.innerHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -209,6 +212,9 @@ function startGameLoop() {
       playerY += input.y * speed;
       if (input.x > 0) facingRight = true;
       if (input.x < 0) facingRight = false;
+      if (currentAnim !== "run") { currentAnim = "run"; spriteFrame = 0; lastFrameTime = timestamp; }
+    } else {
+      if (currentAnim !== "idle") { currentAnim = "idle"; spriteFrame = 0; lastFrameTime = timestamp; }
     }
 
     const map = window.ElarionMap;
@@ -230,12 +236,24 @@ function startGameLoop() {
       ctx.drawImage(map.image, -camX, -camY, map.pixelWidth, map.pixelHeight);
     }
 
-    // Dibujamos la imagen ENTERA, sin recortar ningun cuadro
-    // Asi no se corta ni desaparece
-    const img = isMoving ? runImg : idleImg;
+    const animData = currentAnim === "run" ? char.data.sprites.run : char.data.sprites.idle;
+    const img = currentAnim === "run" ? runImg : idleImg;
     if (img && img.complete && img.naturalWidth > 0) {
+      // Usamos frames totales de personaldata.js: idle 5, run 8
+      const totalFrames = animData.frames;
+      const useFrames = animData.useFrames;
+      // El ancho real de 1 cuadro = ancho total de la imagen dividido por frames totales
+      // NO usamos el 32 de frameWidth porque ese numero esta mal
+      const fw = img.naturalWidth / totalFrames;
+      const fh = img.naturalHeight;
+      if (timestamp - lastFrameTime > animData.frameDuration) {
+        spriteFrame = (spriteFrame + 1) % useFrames.length;
+        lastFrameTime = timestamp;
+      }
+      const frameNumber = useFrames[spriteFrame];
+      const sx = (frameNumber - 1) * fw;
       const drawH = 128;
-      const drawW = img.naturalWidth * (drawH / img.naturalHeight);
+      const drawW = fw * (drawH / fh);
       const dx = canvas.width / 2 - drawW / 2;
       const dy = canvas.height / 2 - drawH / 2;
       ctx.imageSmoothingEnabled = false;
@@ -243,9 +261,9 @@ function startGameLoop() {
       if (!facingRight) {
         ctx.translate(canvas.width / 2, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(img, -drawW / 2, dy, drawW, drawH);
+        ctx.drawImage(img, sx, 0, fw, fh, -drawW / 2, dy, drawW, drawH);
       } else {
-        ctx.drawImage(img, dx, dy, drawW, drawH);
+        ctx.drawImage(img, sx, 0, fw, fh, dx, dy, drawW, drawH);
       }
       ctx.restore();
     }
