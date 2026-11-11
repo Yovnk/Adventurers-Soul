@@ -1,5 +1,5 @@
-// ui.js - SOLO HUD, 3 ARREGLOS. NADA GENERICO.
-// 1: Skills estilo Mobile Legends. 2: Personaje mas angosto. 3: Inventario mas chico + no cierra Personaje.
+// ui.js - SOLO HUD
+// 1: Skills estilo Mobile Legends. 2: Personaje sin hueco, se achica solo. 3: Inventario mas chico + ventanas que se pueden arrastrar.
 
 (function() {
   function getCharacter() {
@@ -41,28 +41,30 @@
   css += "#skill-6 { left:112px; top:66px; }";
   css += ".window { position:absolute; background:#e8e0d0; color:#222; border:3px solid #7a6a4a; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.7); display:none; pointer-events:auto; z-index:10; }";
   css += ".window.open { display:block; }";
-  css += ".window-header { background:#3a3a5a; color:#fff; padding:8px 12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-radius:5px 5px 0 0; }";
+  css += ".window-header { background:#3a3a5a; color:#fff; padding:8px 12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-radius:5px 5px 0 0; cursor:grab; touch-action:none; user-select:none; }";
+  css += ".window-header:active { cursor:grabbing; }";
   css += ".window-close { background:#c62828; border:none; color:#fff; width:24px; height:24px; border-radius:4px; cursor:pointer; font-weight:bold; }";
-  css += ".window-body { padding:10px; overflow-y:auto; max-height:72vh; }";
-  // 2. PERSONAJE MAS ANGOSTO: 680 -> 520, sin hueco a la derecha
-  css += "#window-personaje { top:50%; left:31%; transform:translate(-50%,-50%); width:520px; max-width:58vw; }";
-  css += "#personaje-layout { display:flex; gap:10px; }";
+  css += ".window-body { padding:10px; overflow-y:auto; max-height:72vh; overflow-x:hidden; }";
+  // 2. PERSONAJE SIN HUECO: sin ancho fijo, la ventana se achica sola
+  css += "#window-personaje { top:8px; left:8px; width:max-content; max-width:92vw; }";
+  css += "#personaje-layout { display:flex; gap:10px; align-items:flex-start; }";
   css += "#equip-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; width:230px; flex-shrink:0; }";
   css += ".equip-slot { background:#fff; border:2px solid #999; border-radius:6px; padding:6px; min-height:48px; cursor:pointer; }";
   css += ".equip-slot.selected { border-color:#1976d2; background:#e3f2fd; }";
   css += ".equip-slot-name { font-size:11px; color:#888; }";
   css += ".equip-slot-item { font-size:13px; font-weight:bold; }";
   css += ".equip-slot-empty { font-size:12px; color:#bbb; }";
-  css += "#stats-col { width:230px; flex-shrink:0; }";
+  css += "#stats-col { width:max-content; flex-shrink:0; }";
   css += ".stat-section { background:#3a3a5a; color:#fff; padding:5px 8px; margin:0 0 6px 0; font-size:12px; font-weight:bold; }";
-  css += ".stat-row { display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #ccc; font-size:13px; }";
-  // 3. INVENTARIO MAS CHICO: 480 -> 340, a la derecha para que conviva con Personaje
-  css += "#window-inventario { top:50%; left:76%; transform:translate(-50%,-50%); width:340px; max-width:38vw; }";
+  css += ".stat-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:3px 0; border-bottom:1px solid #ccc; font-size:13px; white-space:nowrap; }";
+  css += ".stat-row b { text-align:right; flex-shrink:0; }";
+  // 3. INVENTARIO MAS CHICO: abre a la derecha de Personaje
+  css += "#window-inventario { top:8px; left:480px; width:340px; max-width:38vw; }";
   css += "#inv-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; }";
   css += ".inv-slot { width:100%; aspect-ratio:1; background:#fff; border:2px solid #999; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }";
   css += ".inv-slot.selected { border-color:#1976d2; background:#e3f2fd; }";
   css += "#inv-info { margin-top:8px; font-size:12px; min-height:18px; color:#555; }";
-  css += "#window-skills { top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:94vw; }";
+  css += "#window-skills { top:8px; left:50%; transform:translateX(-50%); width:420px; max-width:94vw; }";
   css += ".skill-row { display:flex; justify-content:space-between; padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; margin-bottom:6px; font-size:13px; }";
   css += "#skills-empty { font-size:13px; color:#666; text-align:center; padding:14px 0; }";
   css += "#joypad { position:absolute; bottom:10px; left:10px; width:150px; height:150px; pointer-events:auto; z-index:5; touch-action:none; }";
@@ -72,7 +74,7 @@
   css += "#joy-down { left:49px; bottom:0; }";
   css += "#joy-left { left:0; top:49px; }";
   css += "#joy-right { right:0; top:49px; }";
-  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:230px; height:170px; bottom:46px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:94vw; left:50%; } #window-inventario { width:94vw; left:50%; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
+  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:230px; height:170px; bottom:46px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:max-content; max-width:94vw; left:8px; } #window-inventario { width:94vw; left:8px; top:auto; bottom:8px; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
 
   var style = document.createElement("style");
   style.textContent = css;
@@ -298,7 +300,7 @@
     renderEquipment();
   }
 
-  // 3. VENTANAS INDEPENDIENTES: abrir una no cierra la otra
+  // VENTANAS INDEPENDIENTES: abrir una no cierra la otra
   function closeAll() {
     var wins = document.querySelectorAll(".window");
     for (var i = 0; i < wins.length; i++) { wins[i].classList.remove("open"); }
@@ -315,7 +317,6 @@
     var el = document.getElementById(id);
     if (!el) return;
     var wasOpen = el.classList.contains("open");
-    // NO llamamos a closeAll: asi Inventario y Personaje pueden estar abiertos juntos para arrastrar
     if (wasOpen) {
       closeOne(id, tabId);
     } else {
@@ -334,6 +335,61 @@
   for (var k = 1; k <= 6; k++) {
     (function(n) { document.getElementById("skill-" + n).onclick = function() { if (window.onSkill) window.onSkill(n); }; })(k);
   }
+
+  // ARRASTRAR VENTANAS: desde la barra azul, con mouse y con dedo
+  var topZ = 20;
+  function makeDraggable(win) {
+    var header = win.querySelector(".window-header");
+    if (!header || win.dataset.draggable) return;
+    win.dataset.draggable = "1";
+    var startX = 0, startY = 0, startLeft = 0, startTop = 0, dragging = false;
+    function onStart(clientX, clientY) {
+      dragging = true;
+      win.style.transform = "none";
+      var rect = win.getBoundingClientRect();
+      startX = clientX;
+      startY = clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+      topZ++;
+      win.style.zIndex = topZ;
+      win.style.left = startLeft + "px";
+      win.style.top = startTop + "px";
+    }
+    function onMove(clientX, clientY) {
+      if (!dragging) return;
+      var newLeft = startLeft + (clientX - startX);
+      var newTop = startTop + (clientY - startY);
+      newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - 60));
+      newTop = Math.max(0, Math.min(newTop, window.innerHeight - 40));
+      win.style.left = newLeft + "px";
+      win.style.top = newTop + "px";
+    }
+    function onEnd() { dragging = false; }
+    header.addEventListener("mousedown", function(e) {
+      if (e.target.classList.contains("window-close")) return;
+      onStart(e.clientX, e.clientY);
+      function mm(ev) { onMove(ev.clientX, ev.clientY); }
+      function mu() { onEnd(); document.removeEventListener("mousemove", mm); document.removeEventListener("mouseup", mu); }
+      document.addEventListener("mousemove", mm);
+      document.addEventListener("mouseup", mu);
+    });
+    header.addEventListener("touchstart", function(e) {
+      if (e.target.classList.contains("window-close")) return;
+      var t = e.changedTouches[0];
+      onStart(t.clientX, t.clientY);
+    }, { passive: true });
+    header.addEventListener("touchmove", function(e) {
+      if (!dragging) return;
+      var t = e.changedTouches[0];
+      onMove(t.clientX, t.clientY);
+      if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+    header.addEventListener("touchend", onEnd, { passive: true });
+  }
+  makeDraggable(wPersonaje);
+  makeDraggable(wInv);
+  makeDraggable(wSkills);
 
   // PAD CON DESLIZAR - misma variable window.moveInput que lee main.js
   var joypadEl = document.getElementById("joypad");
