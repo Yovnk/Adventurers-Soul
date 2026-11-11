@@ -2,14 +2,19 @@
 // index.html carga SOLO este archivo
 // Este archivo contiene toda la logica de atributos
 // Y al final carga todas las clases
-// Por ahora solo tenemos Paladin
-// Cuando agregues una clase nueva, SOLO agregas su ruta abajo en CLASS_FILES
+// Junta CLASE (stats+skills) + SKIN (sprites) para crear el personaje
 
 class Character {
-  constructor(personaldata, options = {}) {
-    this.data = personaldata;
-    this.className = personaldata.className || personaldata.name || "SinClase";
-    this.baseStats = { ...personaldata.stats };
+  constructor(classData, skinData, options = {}) {
+    const finalClass = classData || {};
+    const finalSkin = skinData || {};
+    this.data = { ...finalClass, ...finalSkin };
+    this.data.stats = finalClass.stats || finalSkin.stats || {};
+    this.data.skills = finalClass.skills || finalSkin.skills || [];
+    this.data.sprites = finalSkin.sprites || finalClass.sprites || {};
+    this.data.basicAttack = finalSkin.basicAttack || finalClass.basicAttack;
+    this.className = this.data.className || this.data.name || "SinClase";
+    this.baseStats = { ...this.data.stats };
     this.equipmentStats = options.equipmentStats || {};
     this.bonusStats = options.bonusStats || {};
     this.bonusSecondary = options.bonusSecondary || {};
@@ -17,14 +22,6 @@ class Character {
     this.hp = this.secondary.maxHP;
     this.mp = this.secondary.maxMP;
   }
-
-  // ATRIBUTOS PRINCIPALES:
-  // (Se calcula con: Atributos Principales + Equipamiento + todo lo que sume)
-  // STR: (Fuerza)
-  // VIT: (Vitalidad)
-  // AGI: (Agilidad)
-  // INT: (Inteligencia)
-  // VOL: (Voluntad)
 
   getTotalPrimary() {
     const total = {};
@@ -35,25 +32,6 @@ class Character {
     return total;
   }
 
-  // ATRIBUTOS SECUNDARIOS:
-  // (Se Calcula con: Atributos Principales + Equipamiento + Habilidad: Absorbsion)
-  // HP: (Vida Actual)/(Vida Maxima)
-  // MP: (Maná Actual)/(Maná Maximo)
-  // Atk: (Ataque Fisico)
-  // MAtk: (Ataque Magico)
-  // DAtk: (Ataque a Distancia)
-  // Def: (Defensa Fisica)(efectiva contra Atk y DAtk)
-  // MDef: (Defensa Magica)(Efectiva contra MAtk)
-  // Hit: (Probabilidad de Golpear al enemigo)
-  // Eva: (Probabilidad de evadir un ataque enemigo)
-  // SAtk: (Velocidad de ataque)
-  // CD: (Velocidad de Casteo de Hablidades)
-  // Crit: (Probabilidad de Hacer un ataque Critico Fisico)
-  // MCrit: (Probabilidad de hacer un ataque Critico Magico)
-  // DCrit: (Daño Critico Atk/DAtk)
-  // DMC: (Daño Critico MAtk)
-  // Bloq: (Probabilidad de Bloquear un ataque enemigo)
-  //
   // 1 de STR = +4 Atk +3 def
   // 1 x VIT = +10 HP +4 Def
   // 1 x AGI = +4 DAtk
@@ -63,8 +41,6 @@ class Character {
   // Cada 50 AGI = +1% Hit +1% Eva +1% Crit +1% SAtk
   // Cada 50 INT: +1% DMC +1% MCrit
   // Cada 50 VOL: +1% CD
-  // Ejemplo: 1STR = 4Atk / 50 STR = 200Atk, 150def, 1% Bloq, 1% DCrit daño critico.
-
   recalculate() {
     const p = this.getTotalPrimary();
     const b = this.bonusSecondary;
@@ -86,9 +62,7 @@ class Character {
     s.dmc = per50(p.int) * 1;
     s.mCrit = per50(p.int) * 1;
     s.cd = per50(p.vol) * 1;
-    for (const k in b) {
-      s[k] = (s[k] || 0) + b[k];
-    }
+    for (const k in b) { s[k] = (s[k] || 0) + b[k]; }
     this.primary = p;
     this.secondary = s;
     if (this.hp !== undefined) this.hp = Math.min(this.hp, s.maxHP);
@@ -112,41 +86,40 @@ class Character {
   // HP = 15*10 = 150
   // MP = 10*5 = 50
 
-  getHPText() {
-    return Math.floor(this.hp) + " / " + this.secondary.maxHP;
-  }
-  getMPText() {
-    return Math.floor(this.mp) + " / " + this.secondary.maxMP;
-  }
+  getHPText() { return Math.floor(this.hp) + " / " + this.secondary.maxHP; }
+  getMPText() { return Math.floor(this.mp) + " / " + this.secondary.maxMP; }
 }
 
 // AL FINAL: CARGA TODAS LAS CLASES
-// index.html carga SOLO characterdata.js
-// Para agregar una clase nueva, SOLO agregas su ruta aca abajo:
-// Ejemplo: "Class/Arquero/personaldata.js", "Class/Mago/personaldata.js"
+// Para agregar una clase nueva, SOLO agregas 1 linea aca abajo:
+// Ejemplo Arquero: { className: "Arquero", classFile: "Class/Arquero/arqueroClass.js", classGlobal: "arqueroClass", skinFile: "Class/Arquero/arquerodata.js", skinGlobal: "arquerodata" }
 
-const CLASS_FILES = ["Class/Paladin/personaldata.js"];
+const CLASS_FILES = [
+  { className: "Paladin", classFile: "Class/Paladin/paladinClass.js", classGlobal: "paladinClass", skinFile: "Class/Paladin/personaldata.js", skinGlobal: "personaldata" }
+];
 
 window.allCharacters = {};
 window.characterReady = (async function() {
   for (let i = 0; i < CLASS_FILES.length; i++) {
-    const filePath = CLASS_FILES[i];
-    const data = await new Promise(function(resolve, reject) {
+    const entry = CLASS_FILES[i];
+    const classData = await new Promise(function(resolve, reject) {
       const s = document.createElement("script");
-      s.src = filePath;
-      s.onload = function() { resolve(personaldata); };
-      s.onerror = function() { reject(new Error("No se pudo cargar " + filePath)); };
+      s.src = entry.classFile;
+      s.onload = function() { resolve(window[entry.classGlobal]); };
+      s.onerror = function() { reject(new Error("No se pudo cargar " + entry.classFile)); };
       document.head.appendChild(s);
     });
-    const className = data.className;
-    window.allCharacters[className] = new Character(data);
-    window.personaldata = undefined;
+    const skinData = await new Promise(function(resolve, reject) {
+      const s = document.createElement("script");
+      s.src = entry.skinFile;
+      s.onload = function() { resolve(window[entry.skinGlobal]); };
+      s.onerror = function() { reject(new Error("No se pudo cargar " + entry.skinFile)); };
+      document.head.appendChild(s);
+    });
+    window.allCharacters[entry.className] = new Character(classData, skinData);
   }
   window.paladin = window.allCharacters["Paladin"];
   return window.allCharacters;
 })();
 
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = Character;
-}
-
+if (typeof module !== "undefined" && module.exports) { module.exports = Character; }
