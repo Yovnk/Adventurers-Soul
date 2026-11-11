@@ -109,7 +109,7 @@ function renderSlots() {
     const div = document.createElement('div');
     div.style = "background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:16px;margin:12px 0";
     if (!s) {
-      div.innerHTML = `<b>Slot ${i+1} - Vacío</b><p style="opacity:.6;font-size:13px">Crear nuevo personaje</p><input id="name${i}" placeholder="Nombre del héroe" style="width:100%;padding:10px;border-radius:10px;background:#0f0f1a;color:white;border:1px solid #444" /><button id="create${i}" style="width:100%;margin-top:8px;padding:12px;border-radius:10px;background:#00b894;color:white;border:none;font-weight:bold">Crear</button>`;
+      div.innerHTML = `<b>Slot ${i+1} - Vacío</b><p style="opacity:.6;font-size:13px">Crear nuevo personaje</p><input id="name${i}" placeholder="Nombre del héroe" style="width:100%;padding:10px;border-radius:10px;background:#0f0f1a;color:white;border:1px solid #444" /><label style="display:block;margin-top:10px;font-size:13px;opacity:.8">Clase</label><select id="clase${i}" style="width:100%;padding:10px;margin-top:4px;border-radius:10px;background:#0f0f1a;color:white;border:1px solid #444"><option value="Paladin">Paladin</option></select><button id="create${i}" style="width:100%;margin-top:8px;padding:12px;border-radius:10px;background:#00b894;color:white;border:none;font-weight:bold">Crear</button>`;
     } else {
       div.innerHTML = `<b>${s.name}</b><p style="opacity:.7;font-size:13px">Nv ${s.level} - ${s.clase} - ${s.map || 'Aldea'}</p><button id="enter${i}" style="width:100%;padding:12px;border-radius:10px;background:#6c5ce7;color:white;border:none;font-weight:bold">ENTRAR AL MUNDO ▶</button><button id="del${i}" style="width:100%;margin-top:6px;padding:8px;background:transparent;color:#ff7675;border:none;font-size:12px">Borrar personaje</button>`;
     }
@@ -118,7 +118,8 @@ function renderSlots() {
       document.getElementById(`create${i}`).onclick = async () => {
         const name = document.getElementById(`name${i}`).value.trim();
         if (!name) return alert("Poné un nombre");
-        slots[i] = { name, clase: "Guerrero", level: 1, xp: 0, gold: 0, map: "Aldea", x: 5, y: 5, createdAt: new Date().toISOString() };
+        const claseElegida = document.getElementById(`clase${i}`).value;
+        slots[i] = { name, clase: claseElegida, level: 1, xp: 0, gold: 0, map: "Aldea", x: 5, y: 5, createdAt: new Date().toISOString() };
         await saveSlots();
         renderSlots();
       };
@@ -135,20 +136,27 @@ function renderSlots() {
 }
 
 // --- 4. ENTRAR AL MUNDO ---
-// index.html ya cargó todo: ui.js, Maps/mapsdata.js, Class/characterdata.js
-// Acá solo mostramos el mundo que ya creó ui.js. No hacemos import ni loadScript.
 async function enterWorld(personaje) {
   goFullscreen();
   localStorage.setItem('personajeActual', JSON.stringify(personaje));
 
-  // Actualizamos el personaje que ya creó characterdata.js
-  if (window.currentCharacter) {
-    window.currentCharacter.name = personaje.name;
-    if (personaje.clase) window.currentCharacter.className = personaje.clase;
+  if (window.characterReady) {
+    try { await window.characterReady; } catch(e) {}
   }
-  // Si characterdata.js todavía no lo dejó listo, lo dejamos como respaldo
-  if (!window.currentCharacter && window.paladin) {
-    window.currentCharacter = window.paladin;
+
+  let char = null;
+  if (window.allCharacters && window.allCharacters[personaje.clase]) {
+    char = window.allCharacters[personaje.clase];
+  } else if (window.paladin) {
+    char = window.paladin;
+  } else if (window.currentCharacter) {
+    char = window.currentCharacter;
+  }
+
+  if (char) {
+    window.currentCharacter = char;
+    char.name = personaje.name;
+    char.className = personaje.clase;
   }
 
   appEl.innerHTML = '';
@@ -158,10 +166,61 @@ async function enterWorld(personaje) {
   if (gw) {
     gw.style.display = 'block';
     if (window.UI) window.UI.update();
+    startGameLoop();
   } else {
     appEl.style.display = 'block';
     appEl.innerHTML = `<div style="background:#0f0f1a;color:white;min-height:100vh;padding:20px">Entraste como ${personaje.name} pero ui.js no creó #game-world.<br>Fijate que index.html esté cargando ui.js.</div>`;
   }
+}
+
+// --- 5. DIBUJAR MAPA + SPRITE ---
+let gameLoopStarted = false;
+let spriteImg = null;
+let spriteFrame = 0;
+let lastFrameTime = 0;
+
+function startGameLoop() {
+  if (gameLoopStarted) return;
+  gameLoopStarted = true;
+
+  const canvas = document.getElementById('game-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const char = window.currentCharacter;
+  if (!char || !char.data || !char.data.sprites || !char.data.sprites.idle) return;
+  const spriteData = char.data.sprites.idle;
+  spriteImg = new Image();
+  spriteImg.src = spriteData.src;
+
+  function loop(timestamp) {
+    if (canvas.width !== window.innerWidth) canvas.width = window.innerWidth;
+    if (canvas.height !== window.innerHeight) canvas.height = window.innerHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const map = window.ElarionMap;
+    if (map && map.image && map.image.complete && map.image.naturalWidth > 0) {
+      ctx.drawImage(map.image, 0, 0, map.pixelWidth, map.pixelHeight);
+    }
+
+    if (spriteImg.complete && spriteImg.naturalWidth > 0) {
+      const fw = char.data.frameWidth;
+      const fh = char.data.frameHeight;
+      const frames = spriteData.useFrames;
+      if (timestamp - lastFrameTime > spriteData.frameDuration) {
+        spriteFrame = (spriteFrame + 1) % frames.length;
+        lastFrameTime = timestamp;
+      }
+      const frameIndex = frames[spriteFrame] - 1;
+      const sx = frameIndex * fw;
+      const dx = canvas.width / 2 - (fw * 2);
+      const dy = canvas.height / 2 - (fh * 2);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(spriteImg, sx, 0, fw, fh, dx, dy, fw * 4, fh * 4);
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
 }
 
 // --- OBSERVADOR DE SESIÓN ---
