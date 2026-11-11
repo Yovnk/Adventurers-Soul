@@ -171,7 +171,9 @@ async function enterWorld(personaje) {
   }
 }
 
-// --- 5. DIBUJAR MAPA + 1 SOLO SPRITE ANIMADO SEGUN PERSONALDATA.JS + MOVER CON EL PAD ---
+// --- 5. DIBUJAR MAPA + SPRITE GENERICO + MOVER CON EL PAD ---
+// Ahora NO dice idleImg / runImg. Carga TODO lo que venga en sprites.
+// Si manana Arquero tiene idle, run, shoot, jump, lo carga solo sin tocar esto.
 let gameLoopStarted = false;
 let playerX = 1920;
 let playerY = 1920;
@@ -179,8 +181,7 @@ let facingRight = true;
 let currentAnim = "idle";
 let spriteFrame = 0;
 let lastFrameTime = 0;
-let idleImg = null;
-let runImg = null;
+let spriteImages = {};
 
 function startGameLoop() {
   if (gameLoopStarted) return;
@@ -193,10 +194,12 @@ function startGameLoop() {
   const char = window.currentCharacter;
   if (!char || !char.data || !char.data.sprites) return;
 
-  idleImg = new Image();
-  idleImg.src = char.data.sprites.idle.src;
-  runImg = new Image();
-  runImg.src = char.data.sprites.run.src;
+  spriteImages = {};
+  for (const animName in char.data.sprites) {
+    const img = new Image();
+    img.src = char.data.sprites[animName].src;
+    spriteImages[animName] = img;
+  }
 
   function loop(timestamp) {
     if (canvas.width !== window.innerWidth) canvas.width = window.innerWidth;
@@ -236,14 +239,11 @@ function startGameLoop() {
       ctx.drawImage(map.image, -camX, -camY, map.pixelWidth, map.pixelHeight);
     }
 
-    const animData = currentAnim === "run" ? char.data.sprites.run : char.data.sprites.idle;
-    const img = currentAnim === "run" ? runImg : idleImg;
-    if (img && img.complete && img.naturalWidth > 0) {
-      // Usamos frames totales de personaldata.js: idle 5, run 8
+    const animData = char.data.sprites[currentAnim] || char.data.sprites.idle;
+    const img = spriteImages[currentAnim] || spriteImages.idle;
+    if (img && img.complete && img.naturalWidth > 0 && animData) {
       const totalFrames = animData.frames;
       const useFrames = animData.useFrames;
-      // El ancho real de 1 cuadro = ancho total de la imagen dividido por frames totales
-      // NO usamos el 32 de frameWidth porque ese numero esta mal
       const fw = img.naturalWidth / totalFrames;
       const fh = img.naturalHeight;
       if (timestamp - lastFrameTime > animData.frameDuration) {
