@@ -171,15 +171,11 @@ async function enterWorld(personaje) {
   }
 }
 
-// --- 5. DIBUJAR MAPA + SPRITE + MOVER CON EL PAD ---
-// Aca es donde se conecta con ui.js: leemos window.moveInput que deja el pad
+// --- 5. DIBUJAR MAPA + SPRITE ENTERO SIN RECORTAR + MOVER CON EL PAD ---
 let gameLoopStarted = false;
 let playerX = 1920;
 let playerY = 1920;
 let facingRight = true;
-let currentAnim = "idle";
-let spriteFrame = 0;
-let lastFrameTime = 0;
 let idleImg = null;
 let runImg = null;
 
@@ -199,12 +195,11 @@ function startGameLoop() {
   runImg = new Image();
   runImg.src = char.data.sprites.run.src;
 
-  function loop(timestamp) {
+  function loop() {
     if (canvas.width !== window.innerWidth) canvas.width = window.innerWidth;
     if (canvas.height !== window.innerHeight) canvas.height = window.innerHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Leemos el pad de ui.js
     const input = window.moveInput || { x: 0, y: 0 };
     const isMoving = input.x !== 0 || input.y !== 0;
     const speed = 3;
@@ -214,12 +209,8 @@ function startGameLoop() {
       playerY += input.y * speed;
       if (input.x > 0) facingRight = true;
       if (input.x < 0) facingRight = false;
-      if (currentAnim !== "run") { currentAnim = "run"; spriteFrame = 0; lastFrameTime = timestamp; }
-    } else {
-      if (currentAnim !== "idle") { currentAnim = "idle"; spriteFrame = 0; lastFrameTime = timestamp; }
     }
 
-    // Limites del mapa para no salirse
     const map = window.ElarionMap;
     const mapW = map ? map.pixelWidth : 3840;
     const mapH = map ? map.pixelHeight : 3840;
@@ -228,7 +219,6 @@ function startGameLoop() {
     if (playerX > mapW) playerX = mapW;
     if (playerY > mapH) playerY = mapH;
 
-    // Camara: el personaje queda siempre en el centro, el mapa se mueve
     let camX = playerX - canvas.width / 2;
     let camY = playerY - canvas.height / 2;
     if (camX < 0) camX = 0;
@@ -240,21 +230,12 @@ function startGameLoop() {
       ctx.drawImage(map.image, -camX, -camY, map.pixelWidth, map.pixelHeight);
     }
 
-    // Elegimos que animacion dibujar
-    const animData = currentAnim === "run" ? char.data.sprites.run : char.data.sprites.idle;
-    const img = currentAnim === "run" ? runImg : idleImg;
+    // Dibujamos la imagen ENTERA, sin recortar ningun cuadro
+    // Asi no se corta ni desaparece
+    const img = isMoving ? runImg : idleImg;
     if (img && img.complete && img.naturalWidth > 0) {
-      const fw = char.data.frameWidth;
-      const fh = char.data.frameHeight;
-      const frames = animData.useFrames;
-      if (timestamp - lastFrameTime > animData.frameDuration) {
-        spriteFrame = (spriteFrame + 1) % frames.length;
-        lastFrameTime = timestamp;
-      }
-      const frameIndex = frames[spriteFrame] - 1;
-      const sx = frameIndex * fw;
-      const drawW = fw * 4;
-      const drawH = fh * 4;
+      const drawH = 128;
+      const drawW = img.naturalWidth * (drawH / img.naturalHeight);
       const dx = canvas.width / 2 - drawW / 2;
       const dy = canvas.height / 2 - drawH / 2;
       ctx.imageSmoothingEnabled = false;
@@ -262,9 +243,9 @@ function startGameLoop() {
       if (!facingRight) {
         ctx.translate(canvas.width / 2, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(img, sx, 0, fw, fh, -drawW / 2, dy, drawW, drawH);
+        ctx.drawImage(img, -drawW / 2, dy, drawW, drawH);
       } else {
-        ctx.drawImage(img, sx, 0, fw, fh, dx, dy, drawW, drawH);
+        ctx.drawImage(img, dx, dy, drawW, drawH);
       }
       ctx.restore();
     }
