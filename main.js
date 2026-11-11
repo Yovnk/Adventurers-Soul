@@ -45,8 +45,16 @@ function goFullscreen() {
 }
 document.addEventListener('click', goFullscreen, { once: true });
 
+// Oculta el mundo mientras estamos en login / slots (ui.js ya lo creó desde index.html)
+function hideWorld() {
+  const gw = document.getElementById('game-world');
+  if (gw) gw.style.display = 'none';
+  appEl.style.display = 'block';
+}
+
 // --- 2. LOGIN ---
 function renderLogin() {
+  hideWorld();
   if (!checkOrientation()) return;
   appEl.innerHTML = `
   <div style="min-height:100vh;background:#0f0f1a;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;font-family:sans-serif">
@@ -86,6 +94,7 @@ async function saveSlots() {
 }
 
 function renderSlots() {
+  hideWorld();
   if (!checkOrientation()) return;
   appEl.innerHTML = `
   <div style="min-height:100vh;background:#0f0f1a;color:white;padding:20px;font-family:sans-serif;max-width:420px;margin:0 auto">
@@ -124,23 +133,33 @@ function renderSlots() {
   });
 }
 
-// --- 4. ENTRAR AL MUNDO - CONECTA CON TU ui.js ---
+// --- 4. ENTRAR AL MUNDO ---
+// index.html ya cargó todo: ui.js, Maps/mapsdata.js, Class/characterdata.js
+// Acá solo mostramos el mundo que ya creó ui.js. No hacemos import ni loadScript.
 async function enterWorld(personaje) {
   goFullscreen();
-  // Guardamos el personaje actual para que ui.js lo lea
   localStorage.setItem('personajeActual', JSON.stringify(personaje));
-  // Acá llamamos a tu UI de juego que ya teníamos
-  // Si tu ui.js exporta startGame, usalo. Si no, importalo dinámico:
-  try {
-    const mod = await import('./ui.js');
-    if (mod.startGame) mod.startGame(personaje, async (personajeActualizado) => {
-      // Cuando el jugador sube de nivel, se guarda solo en la nube
-      const idx = slots.findIndex(s => s && s.name === personaje.name);
-      if (idx >= 0) { slots[idx] = personajeActualizado; await saveSlots(); }
-    });
-    else appEl.innerHTML = `<h2 style="color:white">Bienvenido ${personaje.name}, tu ui.js no tiene startGame()</h2>`;
-  } catch(e) {
-    appEl.innerHTML = `<div style="color:white;padding:20px">Entraste como ${personaje.name}. Falta conectar ui.js: ${e.message}</div>`;
+
+  // Actualizamos el personaje que ya creó characterdata.js
+  if (window.currentCharacter) {
+    window.currentCharacter.name = personaje.name;
+    if (personaje.clase) window.currentCharacter.className = personaje.clase;
+  }
+  // Si characterdata.js todavía no lo dejó listo, lo dejamos como respaldo
+  if (!window.currentCharacter && window.paladin) {
+    window.currentCharacter = window.paladin;
+  }
+
+  appEl.innerHTML = '';
+  appEl.style.display = 'none';
+
+  const gw = document.getElementById('game-world');
+  if (gw) {
+    gw.style.display = 'block';
+    if (window.UI) window.UI.update();
+  } else {
+    appEl.style.display = 'block';
+    appEl.innerHTML = `<div style="background:#0f0f1a;color:white;min-height:100vh;padding:20px">Entraste como ${personaje.name} pero ui.js no creó #game-world.<br>Fijate que index.html esté cargando ui.js.</div>`;
   }
 }
 
