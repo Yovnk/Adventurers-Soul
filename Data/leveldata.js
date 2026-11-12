@@ -4,7 +4,6 @@
 // Niveles de cambio de clase 6,16,31,66,86 ya rellenados, no son gratis
 
 window.LEVEL_DATA = {
-  CAP_JUGABLE: 50,
   CAP_TOTAL: 100,
   // XP necesaria para pasar DE ese nivel AL siguiente
   XP_NEEDED: {
@@ -21,6 +20,70 @@ window.LEVEL_DATA = {
   },
   getXPNeeded: function(level) {
     return this.XP_NEEDED[level] || 0;
+  },
+
+  // Gates verdaderos tipo Grand Fantasia - Trabado por defecto
+  // Sin quest = sin pasar. Nadie pasa de 30 a 31 hasta desbloquear 30.
+  GATES: {
+    30: { desbloqueado: false, nombre: "Cambio 30" },
+    50: { desbloqueado: false, nombre: "Cambio 50" },
+    70: { desbloqueado: false, nombre: "Cambio 70" },
+    80: { desbloqueado: false, nombre: "Cambio 80" }
+  },
+
+  // ¿Está bloqueado en este nivel?
+  estaBloqueado: function(nivelActual) {
+    return !!(this.GATES[nivelActual] && !this.GATES[nivelActual].desbloqueado);
+  },
+
+  // ¿Puede subir de este nivel al siguiente?
+  puedeSubir: function(nivelActual) {
+    return !this.estaBloqueado(nivelActual);
+  },
+
+  // Esto lo va a llamar la quest cuando la tengas hecha
+  // Ejemplo: LEVEL_DATA.desbloquearGate(30)
+  desbloquearGate: function(nivel) {
+    if (this.GATES[nivel]) {
+      this.GATES[nivel].desbloqueado = true;
+      return true;
+    }
+    return false;
+  },
+
+  // GANAR XP - Único lugar donde se sube de nivel
+  // Uso: LEVEL_DATA.ganarXP(jugador, 100)
+  // jugador tiene que tener: { nivel: 1, xp: 0 }
+  // Si está en un gate trabado, se queda con la barra llena y no sube
+  ganarXP: function(jugador, xpGanada) {
+    if (!jugador) return { subio: 0, bloqueado: false, nivel: 0 };
+    if (!jugador.xp) jugador.xp = 0;
+    if (!jugador.nivel) jugador.nivel = 1;
+
+    jugador.xp += xpGanada;
+    var nivelesSubidos = 0;
+    var bloqueado = false;
+
+    while (jugador.nivel < this.CAP_TOTAL && jugador.xp >= this.getXPNeeded(jugador.nivel)) {
+      // Gate trabado = no sube, se estanca con la barra llena
+      if (!this.puedeSubir(jugador.nivel)) {
+        jugador.xp = this.getXPNeeded(jugador.nivel);
+        bloqueado = true;
+        break;
+      }
+
+      jugador.xp -= this.getXPNeeded(jugador.nivel);
+      jugador.nivel++;
+      nivelesSubidos++;
+    }
+
+    // Tope total 100, no se pasa
+    if (jugador.nivel >= this.CAP_TOTAL) {
+      jugador.nivel = this.CAP_TOTAL;
+      jugador.xp = 0;
+    }
+
+    return { subio: nivelesSubidos, bloqueado: bloqueado, nivel: jugador.nivel };
   }
 };
 
