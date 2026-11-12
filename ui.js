@@ -23,10 +23,12 @@
   css += ".bar-bg { width:100%; height:10px; background:#222; border:1px solid #000; border-radius:4px; overflow:hidden; margin-top:1px; }";
   css += "#hp-fill { height:100%; width:100%; background:linear-gradient(90deg,#d32f2f,#ff5252); }";
   css += "#mp-fill { height:100%; width:100%; background:linear-gradient(90deg,#1976d2,#42a5f5); }";
-  // BOTONES - BAJADOS al espacio que ocupaba el texto 0/15 XP - ARREGLO 2
+  // BOTONES - CUADRO EXTERIOR IGUAL, BOTONES INTERNOS MAS CHICOS
   css += "#hud-bottom-center { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; z-index:6; }";
-  css += ".tab-btn { background:#2a2a35; border:2px solid #666; color:#fff; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:bold; font-size:13px; white-space:nowrap; }";
+  css += ".tab-btn { background:#2a2a35; border:2px solid #666; color:#fff; padding:4px 8px; border-radius:10px; cursor:pointer; font-weight:bold; font-size:11px; white-space:nowrap; display:flex; align-items:center; justify-content:center; min-width:38px; height:34px; line-height:1; }";
+  css += ".tab-btn svg { width:20px; height:20px; display:block; }";
   css += ".tab-btn.active { background:#ffd700; color:#000; border-color:#ffd700; }";
+  css += ".tab-btn.active svg { stroke:#000; }";
   // XP ABAJO DE LOS BOTONES - TEXTO ADENTRO DE LA BARRA - ARREGLO 2
   css += "#hud-xp-wrap { position:absolute; bottom:5px; left:50%; transform:translateX(-50%); width:320px; max-width:44vw; pointer-events:none; z-index:6; text-align:center; }";
   css += "#xp-bar-bg { position:relative; width:100%; height:11px; background:rgba(0,0,0,0.7); border:1px solid #555; border-radius:10px; overflow:hidden; }";
@@ -38,13 +40,13 @@
   css += ".skill-btn.empty { opacity:0.45; }";
   css += "#btn-basic { position:absolute; right:0; bottom:0; width:84px; height:84px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ff7043, #bf360c); border:3px solid #fff; color:#fff; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.6); z-index:1; }";
   css += "#btn-basic:active { transform:scale(0.93); }";
-  css += "#skill-1 { left:78px; top:0; }";
+  // SKILLS - NUEVO AJUSTE
+  css += "#skill-1 { left:100px; top:84px; }"; // baja para quedar en medio de Skill 4 y Skill 5
   css += "#skill-2 { left:136px; top:0; }";
   css += "#skill-3 { left:194px; top:10px; }";
-  // ARREGLO 3 - SKILLS
-  css += "#skill-4 { left:86px; top:88px; }"; // baja hasta abajo y a la derecha, mas cerca de BASICO
-  css += "#skill-5 { left:126px; top:54px; }"; // sube apenitas (antes 58)
-  css += "#skill-6 { left:180px; top:52px; }"; // sube un poco mas porque estaba tapado (antes 66)
+  css += "#skill-4 { left:94px; top:118px; }"; // mas abajo a la altura de la palabra BASICO y un pelito mas a la derecha
+  css += "#skill-5 { left:112px; top:54px; }"; // un poco a la izquierda (antes 126)
+  css += "#skill-6 { left:180px; top:42px; }"; // un poco mas arriba (antes 52)
   css += ".window { position:absolute; background:#e8e0d0; color:#222; border:3px solid #7a6a4a; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.7); display:none; pointer-events:auto; z-index:10; }";
   css += ".window.open { display:block; }";
   css += ".window-header { background:#3a3a5a; color:#fff; padding:8px 12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-radius:5px 5px 0 0; cursor:grab; touch-action:none; user-select:none; }";
@@ -103,6 +105,10 @@
     gameWorld.appendChild(cv);
   }
 
+  // SVG ICONOS - dibujados en codigo, sin imagen externa
+  var ICON_BACKPACK = "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M9 8V6a3 3 0 0 1 6 0v2'/><path d='M5 8h14v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8z'/><path d='M9 12h6v4a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-4z'/><path d='M5 12h2M17 12h2'/></svg>";
+  var ICON_HUMAN = "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='5' r='2.5'/><path d='M12 8v7'/><path d='M8.5 10.5 7 21M15.5 10.5 17 21'/><path d='M8.5 10.5h7'/><path d='M12 15l-2 6M12 15l2 6'/></svg>";
+
   var hud = document.createElement("div");
   hud.id = "hud";
   hud.innerHTML = ""
@@ -121,8 +127,8 @@
     + "<div class='joy-btn' id='joy-right'>→</div>"
     + "</div>"
     + "<div id='hud-bottom-center'>"
-    + "<button class='tab-btn' id='tab-inventario'>Inventario</button>"
-    + "<button class='tab-btn' id='tab-personaje'>Personaje</button>"
+    + "<button class='tab-btn' id='tab-inventario' aria-label='Inventario'>" + ICON_BACKPACK + "</button>"
+    + "<button class='tab-btn' id='tab-personaje' aria-label='Personaje'>" + ICON_HUMAN + "</button>"
     + "<button class='tab-btn' id='tab-skills'>Skills</button>"
     + "</div>"
     + "<div id='hud-xp-wrap'><div id='xp-bar-bg'><div id='xp-fill'></div><div id='xp-text'>0 / 0 XP</div></div></div>"
@@ -204,7 +210,7 @@
   var equipment = {};
   for (var e = 0; e < EQUIP_SLOTS.length; e++) { equipment[EQUIP_SLOTS[e].key] = null; }
   var inventory = [];
-  for (var i = 0; i < 36; i++) { inventory.push(null); } // ARREGLO 1: 6x6 = 36
+  for (var i = 0; i < 36; i++) { inventory.push(null); }
   var selectedEquipKey = null;
 
   function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
@@ -289,9 +295,7 @@
     setText("personaje-title", "Personaje - " + heroName);
     setText("hp-text", Math.floor(c.hp) + " / " + s.maxHP);
     setText("mp-text", Math.floor(c.mp) + " / " + s.maxMP);
-    // XP - conectado al snapshot de main.js (nuevo o cargado) - texto ahora adentro de la barra
     setText("xp-text", xp + " / " + xpNeed + " XP");
-    // ORO - conectado al snapshot, solo en inventario
     setText("inv-oro", oro);
     setText("inv-plata", plata);
     setText("inv-cobre", cobre);
