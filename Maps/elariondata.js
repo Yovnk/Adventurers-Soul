@@ -5,7 +5,7 @@
 
 (function() {
 
-  var TILE_SIZE = 32;
+  var TILE_SIZE = 40;
   var MAP_WIDTH = 120;  // tiles
   var MAP_HEIGHT = 120; // tiles
 
