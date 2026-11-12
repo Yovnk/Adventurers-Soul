@@ -1,14 +1,14 @@
 // ui.js - SOLO HUD - BLINDADO
 // No lee localStorage. No toca oro/XP. Solo muestra la copia que le pasa main.js con UI.update(snapshot).
-// Si alguien toca esa copia, solo se miente el dibujo, no se guarda nada en Firebase.
+// XP abajo de los botones. Oro solo en inventario. Inventario sin scroll.
 (function() {
   function getCharacter() {
     if (window.currentCharacter) return window.currentCharacter;
     if (window.paladin) return window.paladin;
     return null;
   }
-  window.moveInput = { x: 0, y: 0 }; // Solo input de movimiento, no economia
-  var lastSnapshot = null; // Copia de solo lectura que manda main.js
+  window.moveInput = { x: 0, y: 0 };
+  var lastSnapshot = null;
 
   var css = "";
   css += "* { margin:0; padding:0; box-sizing:border-box; font-family: Tahoma, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }";
@@ -23,11 +23,15 @@
   css += ".bar-bg { width:100%; height:10px; background:#222; border:1px solid #000; border-radius:4px; overflow:hidden; margin-top:1px; }";
   css += "#hp-fill { height:100%; width:100%; background:linear-gradient(90deg,#d32f2f,#ff5252); }";
   css += "#mp-fill { height:100%; width:100%; background:linear-gradient(90deg,#1976d2,#42a5f5); }";
-  css += "#xp-fill { height:100%; width:0%; background:linear-gradient(90deg,#ffb300,#ffe082); }";
-  css += "#hud-money { font-size:11px; color:#ffd700; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }";
-  css += "#hud-bottom-center { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; z-index:6; }";
+  // BOTONES - subidos solo lo justo para que entre la XP ABAJO
+  css += "#hud-bottom-center { position:absolute; bottom:26px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; z-index:6; }";
   css += ".tab-btn { background:#2a2a35; border:2px solid #666; color:#fff; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:bold; font-size:13px; white-space:nowrap; }";
   css += ".tab-btn.active { background:#ffd700; color:#000; border-color:#ffd700; }";
+  // XP ABAJO DE LOS BOTONES
+  css += "#hud-xp-wrap { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:320px; max-width:44vw; pointer-events:none; z-index:6; text-align:center; }";
+  css += "#xp-text { font-size:10px; color:#ffe082; text-shadow:0 1px 2px #000; margin-bottom:2px; }";
+  css += "#xp-bar-bg { width:100%; height:7px; background:rgba(0,0,0,0.7); border:1px solid #555; border-radius:10px; overflow:hidden; }";
+  css += "#xp-fill { height:100%; width:0%; background:linear-gradient(90deg,#ffb300,#ffe082); transition:width 0.3s; }";
   css += "#hud-bottom-right { position:absolute; bottom:10px; right:10px; width:260px; height:190px; pointer-events:auto; z-index:5; }";
   css += ".skill-btn { position:absolute; width:48px; height:48px; border-radius:50%; background:#222; border:2px solid #888; color:#fff; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; z-index:2; }";
   css += ".skill-btn:active { transform:scale(0.92); }";
@@ -58,11 +62,20 @@
   css += ".stat-section { background:#3a3a5a; color:#fff; padding:5px 8px; margin:0 0 6px 0; font-size:12px; font-weight:bold; }";
   css += ".stat-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:3px 0; border-bottom:1px solid #ccc; font-size:13px; white-space:nowrap; }";
   css += ".stat-row b { text-align:right; flex-shrink:0; }";
+  // INVENTARIO SIN SCROLL - calza justo
   css += "#window-inventario { top:8px; left:480px; width:340px; max-width:38vw; }";
+  css += "#window-inventario .window-body { overflow:visible; max-height:none; padding:10px 10px 8px 10px; }";
   css += "#inv-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; }";
   css += ".inv-slot { width:100%; aspect-ratio:1; background:#fff; border:2px solid #999; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }";
   css += ".inv-slot.selected { border-color:#1976d2; background:#e3f2fd; }";
-  css += "#inv-info { margin-top:8px; font-size:12px; min-height:18px; color:#555; }";
+  css += "#inv-info { margin-top:6px; font-size:12px; min-height:18px; color:#555; }";
+  // BEIGE REDUCIDO CON LAS 3 MONEDAS - abajo del inventario
+  css += "#inv-money { display:flex; gap:12px; align-items:center; justify-content:center; margin-top:6px; padding:5px 6px; background:rgba(0,0,0,0.08); border:1px solid #c9b98a; border-radius:6px; }";
+  css += ".coin-item { display:flex; align-items:center; gap:4px; font-size:13px; font-weight:bold; color:#222; }";
+  css += ".coin { width:16px; height:16px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,0.3); flex-shrink:0; }";
+  css += ".coin-gold { background:radial-gradient(circle at 30% 30%, #ffe082, #ffb300 60%, #8d6e00); }";
+  css += ".coin-silver { background:radial-gradient(circle at 30% 30%, #ffffff, #b0bec5 60%, #607d8b); }";
+  css += ".coin-copper { background:radial-gradient(circle at 30% 30%, #ffab91, #bf360c 60%, #4e342e); }";
   css += "#window-skills { top:8px; left:50%; transform:translateX(-50%); width:420px; max-width:94vw; }";
   css += ".skill-row { display:flex; justify-content:space-between; padding:8px; background:#fff; border:1px solid #ccc; border-radius:4px; margin-bottom:6px; font-size:13px; }";
   css += "#skills-empty { font-size:13px; color:#666; text-align:center; padding:14px 0; }";
@@ -73,7 +86,7 @@
   css += "#joy-down { left:49px; bottom:0; }";
   css += "#joy-left { left:0; top:49px; }";
   css += "#joy-right { right:0; top:49px; }";
-  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:230px; height:170px; bottom:10px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:max-content; max-width:94vw; left:8px; } #window-inventario { width:94vw; left:8px; top:auto; bottom:8px; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
+  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:230px; height:170px; bottom:10px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:max-content; max-width:94vw; left:8px; } #window-inventario { width:94vw; left:8px; top:auto; bottom:8px; } #joypad { transform:scale(0.85); transform-origin:bottom left; } #hud-bottom-center { bottom:22px; } #hud-xp-wrap { bottom:5px; width:280px; } }";
 
   var style = document.createElement("style");
   style.textContent = css;
@@ -99,9 +112,6 @@
     + "<div class='bar-bg'><div id='hp-fill'></div></div>"
     + "<div class='bar-label'><span>MP</span><span id='mp-text'>0 / 0</span></div>"
     + "<div class='bar-bg'><div id='mp-fill'></div></div>"
-    + "<div class='bar-label'><span>XP</span><span id='xp-text'>0 / 0</span></div>"
-    + "<div class='bar-bg'><div id='xp-fill'></div></div>"
-    + "<div id='hud-money'>0 cobre</div>"
     + "</div>"
     + "<div id='joypad'>"
     + "<div class='joy-btn' id='joy-up'>↑</div>"
@@ -114,6 +124,7 @@
     + "<button class='tab-btn' id='tab-personaje'>Personaje</button>"
     + "<button class='tab-btn' id='tab-skills'>Skills</button>"
     + "</div>"
+    + "<div id='hud-xp-wrap'><div id='xp-text'>0 / 0 XP</div><div id='xp-bar-bg'><div id='xp-fill'></div></div></div>"
     + "<div id='hud-bottom-right'>"
     + "<button class='skill-btn empty' id='skill-1'>Skill 1</button>"
     + "<button class='skill-btn empty' id='skill-2'>Skill 2</button>"
@@ -164,7 +175,8 @@
   wInv.className = "window";
   wInv.innerHTML = ""
     + "<div class='window-header'><span>Inventario</span><button class='window-close' id='close-inventario'>X</button></div>"
-    + "<div class='window-body'><div id='inv-grid'></div><div id='inv-info'>Toca un slot para ver el item.</div></div>";
+    + "<div class='window-body'><div id='inv-grid'></div><div id='inv-info'>Toca un slot para ver el item.</div>"
+    + "<div id='inv-money'><span class='coin-item'><span class='coin coin-gold'></span><span id='inv-oro'>0</span></span><span class='coin-item'><span class='coin coin-silver'></span><span id='inv-plata'>0</span></span><span class='coin-item'><span class='coin coin-copper'></span><span id='inv-cobre'>0</span></span></div></div>";
   gameWorld.appendChild(wInv);
 
   var wSkills = document.createElement("div");
@@ -258,7 +270,7 @@
     }
   }
   function updateUI(snapshot) {
-    if (snapshot) lastSnapshot = snapshot; // Solo lectura para mostrar
+    if (snapshot) lastSnapshot = snapshot;
     var c = getCharacter();
     if (!c) return;
     var p = c.primary;
@@ -268,14 +280,20 @@
     var xp = (lastSnapshot && lastSnapshot.xp) || 0;
     var xpNeed = (lastSnapshot && lastSnapshot.xpNeed) || 0;
     var bloqueado = !!(lastSnapshot && lastSnapshot.bloqueado);
-    var dinero = (lastSnapshot && lastSnapshot.dineroTexto) || "0 cobre";
+    var oro = (lastSnapshot && lastSnapshot.oro) || 0;
+    var plata = (lastSnapshot && lastSnapshot.plata) || 0;
+    var cobre = (lastSnapshot && lastSnapshot.cobre) || 0;
     setText("hud-name", heroName);
     setText("hud-class", "Nv. " + nivel + " - " + c.className + (bloqueado ? " 🔒" : ""));
     setText("personaje-title", "Personaje - " + heroName);
     setText("hp-text", Math.floor(c.hp) + " / " + s.maxHP);
     setText("mp-text", Math.floor(c.mp) + " / " + s.maxMP);
-    setText("xp-text", xp + " / " + xpNeed);
-    setText("hud-money", dinero);
+    // XP - conectado al snapshot de main.js (nuevo o cargado)
+    setText("xp-text", xp + " / " + xpNeed + " XP");
+    // ORO - conectado al snapshot, solo en inventario
+    setText("inv-oro", oro);
+    setText("inv-plata", plata);
+    setText("inv-cobre", cobre);
     var hpFill = document.getElementById("hp-fill");
     var mpFill = document.getElementById("mp-fill");
     var xpFill = document.getElementById("xp-fill");
@@ -457,6 +475,5 @@
   renderEquipment();
   if (window.characterReady) { window.characterReady.then(function() { updateUI(); }); } else { setTimeout(updateUI, 500); }
   setInterval(function() { updateUI(); }, 500);
-  // Solo se expone update() para dibujar. No se expone inventario/equipo para mutar.
   window.UI = { update: updateUI };
 })();
