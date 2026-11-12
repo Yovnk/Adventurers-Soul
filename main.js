@@ -22,6 +22,32 @@ const googleProvider = new GoogleAuthProvider();
 const appEl = document.getElementById('app');
 let currentUser = null;
 let slots = [null, null, null]; // 3 slots
+let currentMapName = null;
+
+// --- HELPERS GENERICOS ---
+function getClassNames() {
+  if (window.allCharacters && Object.keys(window.allCharacters).length > 0) {
+    return Object.keys(window.allCharacters);
+  }
+  // Si todavia no cargaron, leemos la lista de characterdata.js
+  if (window.CLASS_FILES) return window.CLASS_FILES.map(c => c.className);
+  return [];
+}
+function getMapNames() {
+  if (window.allMaps && Object.keys(window.allMaps).length > 0) {
+    return Object.keys(window.allMaps);
+  }
+  if (window.MAP_FILES) return window.MAP_FILES.map(m => m.mapName);
+  return ["Elarion"];
+}
+function getCurrentMap() {
+  if (currentMapName && window.allMaps && window.allMaps[currentMapName]) return window.allMaps[currentMapName];
+  if (window.allMaps) {
+    const keys = Object.keys(window.allMaps);
+    if (keys.length > 0) return window.allMaps[keys[0]];
+  }
+  return null;
+}
 
 // --- 1. BLOQUEO VERTICAL + PANTALLA COMPLETA ---
 function checkOrientation() {
@@ -92,9 +118,13 @@ async function saveSlots() {
   await setDoc(doc(db, "usuarios", currentUser.uid), { slots }, { merge: true });
 }
 
-function renderSlots() {
+async function renderSlots() {
   hideWorld();
   if (!checkOrientation()) return;
+  // Esperamos a que carguen clases y mapas para armar el select generico
+  if (window.characterReady) { try { await window.characterReady; } catch(e){} }
+  if (window.mapsReady) { try { await window.mapsReady; } catch(e){} }
+
   appEl.innerHTML = `
   <div style="min-height:100vh;background:#0f0f1a;color:white;padding:20px;font-family:sans-serif;max-width:420px;margin:0 auto">
     <div style="display:flex;justify-content:space-between;align-items:center"><h2>Elige tu héroe</h2><button id="btnLogout" style="background:#333;color:white;border:none;padding:8px 12px;border-radius:8px">Salir</button></div>
@@ -103,13 +133,16 @@ function renderSlots() {
   </div>`;
   document.getElementById('btnLogout').onclick = () => signOut(auth);
   const container = document.getElementById('slots');
+  const classOptions = getClassNames().map(c => `<option value="${c}">${c}</option>`).join('');
+  const defaultMap = getMapNames()[0] || "Elarion";
+
   slots.forEach((s, i) => {
     const div = document.createElement('div');
     div.style = "background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:16px;margin:12px 0";
     if (!s) {
-      div.innerHTML = `<b>Slot ${i+1} - Vacío</b><p style="opacity:.6;font-size:13px">Crear nuevo personaje</p><input id="name${i}" placeholder="Nombre del héroe" style="width:100%;padding:10px;border-radius:10px;background:#0f0f1a;color:white;border:1px solid #444" /><label style="display:block;margin-top:10px;font-size:13px;opacity:.8">Clase</label><select id="clase${i}" style="width:100%;padding:10px;margin-top:4px;border-radius:10px;background:#0f0f1a;color:white;border:1px solid #444"><option value="Paladin">Paladin</option></select><button id="create${i}" style="width:100%;margin-top:8px;padding:12px;border-radius:10px;background:#00b894;color:white;border:none;font-weight:bold">Crear</button>`;
+      div.innerHTML = `<b>Slot ${i+1} - Vacío</b><p style="opacity:.6;font-size:13px">Crear nuevo personaje</p><input id="name${i}" placeholder="Nombre del héroe" style="width:100%;padding:10px;border-radius:10px;background:#0f0f1a;color:white;border:1px solid #444" /><label style="display:block;margin-top:10px;font-size:13px;opacity:.8">Clase</label><select id="clase${i}" style="width:100%;padding:10px;margin-top:4px;border-radius:10px;background:#0f0f1a;color:white;border:1px solid #444">${classOptions}</select><button id="create${i}" style="width:100%;margin-top:8px;padding:12px;border-radius:10px;background:#00b894;color:white;border:none;font-weight:bold">Crear</button>`;
     } else {
-      div.innerHTML = `<b>${s.name}</b><p style="opacity:.7;font-size:13px">Nv ${s.level} - ${s.clase} - ${s.map || 'Aldea'}</p><button id="enter${i}" style="width:100%;padding:12px;border-radius:10px;background:#6c5ce7;color:white;border:none;font-weight:bold">ENTRAR AL MUNDO ▶</button><button id="del${i}" style="width:100%;margin-top:6px;padding:8px;background:transparent;color:#ff7675;border:none;font-size:12px">Borrar personaje</button>`;
+      div.innerHTML = `<b>${s.name}</b><p style="opacity:.7;font-size:13px">Nv ${s.level} - ${s.clase} - ${s.map || defaultMap}</p><button id="enter${i}" style="width:100%;padding:12px;border-radius:10px;background:#6c5ce7;color:white;border:none;font-weight:bold">ENTRAR AL MUNDO ▶</button><button id="del${i}" style="width:100%;margin-top:6px;padding:8px;background:transparent;color:#ff7675;border:none;font-size:12px">Borrar personaje</button>`;
     }
     container.appendChild(div);
     if (!s) {
@@ -117,7 +150,7 @@ function renderSlots() {
         const name = document.getElementById(`name${i}`).value.trim();
         if (!name) return alert("Poné un nombre");
         const claseElegida = document.getElementById(`clase${i}`).value;
-        slots[i] = { name, clase: claseElegida, level: 1, xp: 0, gold: 0, map: "Aldea", x: 5, y: 5, createdAt: new Date().toISOString() };
+        slots[i] = { name, clase: claseElegida, level: 1, xp: 0, gold: 0, map: defaultMap, x: 5, y: 5, createdAt: new Date().toISOString() };
         await saveSlots();
         renderSlots();
       };
@@ -141,21 +174,26 @@ async function enterWorld(personaje) {
   if (window.characterReady) {
     try { await window.characterReady; } catch(e) {}
   }
+  if (window.mapsReady) {
+    try { await window.mapsReady; } catch(e) {}
+  }
+
+  currentMapName = personaje.map || getMapNames()[0];
 
   let char = null;
   if (window.allCharacters && window.allCharacters[personaje.clase]) {
     char = window.allCharacters[personaje.clase];
-  } else if (window.paladin) {
-    char = window.paladin;
-  } else if (window.currentCharacter) {
-    char = window.currentCharacter;
   }
 
-  if (char) {
-    window.currentCharacter = char;
-    char.name = personaje.name;
-    char.className = personaje.clase;
+  if (!char) {
+    appEl.style.display = 'block';
+    appEl.innerHTML = `<div style="background:#0f0f1a;color:white;min-height:100vh;padding:20px">No se encontró la clase ${personaje.clase}.<br>Revisá que esté agregada en characterdata.js</div>`;
+    return;
   }
+
+  window.currentCharacter = char;
+  char.name = personaje.name;
+  char.className = personaje.clase;
 
   appEl.innerHTML = '';
   appEl.style.display = 'none';
@@ -172,8 +210,6 @@ async function enterWorld(personaje) {
 }
 
 // --- 5. DIBUJAR MAPA + SPRITE GENERICO + MOVER CON EL PAD ---
-// Ahora NO dice idleImg / runImg. Carga TODO lo que venga en sprites.
-// Si manana Arquero tiene idle, run, shoot, jump, lo carga solo sin tocar esto.
 let gameLoopStarted = false;
 let playerX = 1920;
 let playerY = 1920;
@@ -220,7 +256,7 @@ function startGameLoop() {
       if (currentAnim !== "idle") { currentAnim = "idle"; spriteFrame = 0; lastFrameTime = timestamp; }
     }
 
-    const map = window.ElarionMap;
+    const map = getCurrentMap();
     const mapW = map ? map.pixelWidth : 3840;
     const mapH = map ? map.pixelHeight : 3840;
     if (playerX < 0) playerX = 0;
