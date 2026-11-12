@@ -25,20 +25,20 @@
   css += "#hud-bottom-center { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; z-index:6; }";
   css += ".tab-btn { background:#2a2a35; border:2px solid #666; color:#fff; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:bold; font-size:13px; white-space:nowrap; }";
   css += ".tab-btn.active { background:#ffd700; color:#000; border-color:#ffd700; }";
-  // 1. SKILLS ML: grupo subido para que no lo tape la barra del medio
-  css += "#hud-bottom-right { position:absolute; bottom:52px; right:10px; width:260px; height:190px; pointer-events:auto; z-index:5; }";
+  // 1. SKILLS ML: BASICO abajo en la esquina, skills corridas a la derecha al borde
+  css += "#hud-bottom-right { position:absolute; bottom:10px; right:10px; width:260px; height:190px; pointer-events:auto; z-index:5; }";
   css += ".skill-btn { position:absolute; width:48px; height:48px; border-radius:50%; background:#222; border:2px solid #888; color:#fff; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; z-index:2; }";
   css += ".skill-btn:active { transform:scale(0.92); }";
   css += ".skill-btn.empty { opacity:0.45; }";
   css += "#btn-basic { position:absolute; right:0; bottom:0; width:84px; height:84px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ff7043, #bf360c); border:3px solid #fff; color:#fff; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.6); z-index:1; }";
   css += "#btn-basic:active { transform:scale(0.93); }";
-  // Arco ML: 3 arriba, 3 en medio, todas a la izquierda / arriba del BASICO
-  css += "#skill-1 { left:10px; top:0; }";
-  css += "#skill-2 { left:68px; top:0; }";
-  css += "#skill-3 { left:126px; top:10px; }";
-  css += "#skill-4 { left:0; top:62px; }";
-  css += "#skill-5 { left:58px; top:58px; }";
-  css += "#skill-6 { left:112px; top:66px; }";
+  // Arco ML: misma forma, todo corrido a la derecha al borde, arriba del BASICO
+  css += "#skill-1 { left:78px; top:0; }";
+  css += "#skill-2 { left:136px; top:0; }";
+  css += "#skill-3 { left:194px; top:10px; }";
+  css += "#skill-4 { left:68px; top:62px; }";
+  css += "#skill-5 { left:126px; top:58px; }";
+  css += "#skill-6 { left:180px; top:66px; }";
   css += ".window { position:absolute; background:#e8e0d0; color:#222; border:3px solid #7a6a4a; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.7); display:none; pointer-events:auto; z-index:10; }";
   css += ".window.open { display:block; }";
   css += ".window-header { background:#3a3a5a; color:#fff; padding:8px 12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-radius:5px 5px 0 0; cursor:grab; touch-action:none; user-select:none; }";
@@ -58,7 +58,7 @@
   css += ".stat-section { background:#3a3a5a; color:#fff; padding:5px 8px; margin:0 0 6px 0; font-size:12px; font-weight:bold; }";
   css += ".stat-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:3px 0; border-bottom:1px solid #ccc; font-size:13px; white-space:nowrap; }";
   css += ".stat-row b { text-align:right; flex-shrink:0; }";
-  // 3. INVENTARIO MAS CHICO: abre a la derecha de Personaje
+  // 3. INVENTARIO MAS CHICO: abre a la derecha de Personaje - MISMO TAMAÑO DE VENTANA, 42 SLOTS
   css += "#window-inventario { top:8px; left:480px; width:340px; max-width:38vw; }";
   css += "#inv-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; }";
   css += ".inv-slot { width:100%; aspect-ratio:1; background:#fff; border:2px solid #999; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }";
@@ -74,7 +74,7 @@
   css += "#joy-down { left:49px; bottom:0; }";
   css += "#joy-left { left:0; top:49px; }";
   css += "#joy-right { right:0; top:49px; }";
-  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:230px; height:170px; bottom:46px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:max-content; max-width:94vw; left:8px; } #window-inventario { width:94vw; left:8px; top:auto; bottom:8px; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
+  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:230px; height:170px; bottom:10px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:max-content; max-width:94vw; left:8px; } #window-inventario { width:94vw; left:8px; top:auto; bottom:8px; } #joypad { transform:scale(0.85); transform-origin:bottom left; } }";
 
   var style = document.createElement("style");
   style.textContent = css;
@@ -189,7 +189,7 @@
   var equipment = {};
   for (var e = 0; e < EQUIP_SLOTS.length; e++) { equipment[EQUIP_SLOTS[e].key] = null; }
   var inventory = [];
-  for (var i = 0; i < 24; i++) { inventory.push(null); }
+  for (var i = 0; i < 42; i++) { inventory.push(null); }
   var selectedEquipKey = null;
 
   function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
