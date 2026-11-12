@@ -1,7 +1,7 @@
 // main.js - Adventurer RPG - Firebase + Horizontal + Fullscreen
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // --- TU CONFIG ---
 const firebaseConfig = {
@@ -118,6 +118,24 @@ async function saveSlots() {
   await setDoc(doc(db, "usuarios", currentUser.uid), { slots }, { merge: true });
 }
 
+// --- NOMBRES UNICOS - NUEVO, SOLO ESTO SE AGREGÓ ---
+async function isNameTaken(name) {
+  const ref = doc(db, "nombres", name.toLowerCase().trim());
+  const snap = await getDoc(ref);
+  return snap.exists();
+}
+async function claimName(name, uid) {
+  await setDoc(doc(db, "nombres", name.toLowerCase().trim()), {
+    name: name.trim(),
+    uid: uid,
+    createdAt: new Date().toISOString()
+  });
+}
+async function releaseName(name) {
+  if (!name) return;
+  await deleteDoc(doc(db, "nombres", name.toLowerCase().trim()));
+}
+
 async function renderSlots() {
   hideWorld();
   if (!checkOrientation()) return;
@@ -149,6 +167,8 @@ async function renderSlots() {
       document.getElementById(`create${i}`).onclick = async () => {
         const name = document.getElementById(`name${i}`).value.trim();
         if (!name) return alert("Poné un nombre");
+        if (await isNameTaken(name)) return alert("Ese nombre ya está usado, elegí otro");
+        await claimName(name, currentUser.uid);
         const claseElegida = document.getElementById(`clase${i}`).value;
         slots[i] = { name, clase: claseElegida, level: 1, xp: 0, gold: 0, map: defaultMap, x: 5, y: 5, createdAt: new Date().toISOString() };
         await saveSlots();
@@ -158,6 +178,7 @@ async function renderSlots() {
       document.getElementById(`enter${i}`).onclick = () => enterWorld(s);
       document.getElementById(`del${i}`).onclick = async () => {
         if (!confirm(`¿Borrar a ${s.name}?`)) return;
+        await releaseName(s.name);
         slots[i] = null;
         await saveSlots();
         renderSlots();
