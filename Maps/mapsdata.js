@@ -1,11 +1,12 @@
 // Maps/mapsdata.js
 // Este archivo solo carga los mapas
 // Para agregar un mapa nuevo, agregás 1 línea en MAP_FILES
-// Ejemplo CamposDelAmanecer:
-// { mapName: "CamposDelAmanecer", file: "Maps/camposdelamanecerdata.js", mapGlobal: "camposdelamanecerMapData" }
+// mapName = interno, sin espacios, nunca se muestra
+// displayName = el que se ve en pantalla, con espacios
 
 const MAP_FILES = [
-  { mapName: "Elarion", file: "Maps/elariondata.js", mapGlobal: "elarionMapData" }
+  { mapName: "Elarion", displayName: "Elarion", file: "Maps/elariondata.js", mapGlobal: "elarionMapData" },
+  { mapName: "CamposDelAmanecer", displayName: "Campos Del Amanecer", file: "Maps/camposdelamanecerdata.js", mapGlobal: "camposdelamanecerMapData" }
 ];
 window.MAP_FILES = MAP_FILES;
 
@@ -30,6 +31,10 @@ window.mapsReady = (async function() {
       console.error("El mapa no dejó su global:", entry.mapName, entry.mapGlobal);
       continue;
     }
+    // Guardamos los dos nombres: el interno y el que se muestra
+    mapData.mapName = entry.mapName;
+    mapData.displayName = entry.displayName || entry.mapName;
+    mapData.name = entry.displayName || entry.mapName;
     window.allMaps[entry.mapName] = mapData;
     // Compat: si algún código viejo busca window.ElarionMap, que siga andando
     window[entry.mapName + "Map"] = mapData;
