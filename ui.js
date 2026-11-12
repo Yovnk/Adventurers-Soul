@@ -23,15 +23,15 @@
   css += ".bar-bg { width:100%; height:10px; background:#222; border:1px solid #000; border-radius:4px; overflow:hidden; margin-top:1px; }";
   css += "#hp-fill { height:100%; width:100%; background:linear-gradient(90deg,#d32f2f,#ff5252); }";
   css += "#mp-fill { height:100%; width:100%; background:linear-gradient(90deg,#1976d2,#42a5f5); }";
-  // BOTONES - subidos solo lo justo para que entre la XP ABAJO
-  css += "#hud-bottom-center { position:absolute; bottom:26px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; z-index:6; }";
+  // BOTONES - BAJADOS al espacio que ocupaba el texto 0/15 XP - ARREGLO 2
+  css += "#hud-bottom-center { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; z-index:6; }";
   css += ".tab-btn { background:#2a2a35; border:2px solid #666; color:#fff; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:bold; font-size:13px; white-space:nowrap; }";
   css += ".tab-btn.active { background:#ffd700; color:#000; border-color:#ffd700; }";
-  // XP ABAJO DE LOS BOTONES
-  css += "#hud-xp-wrap { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:320px; max-width:44vw; pointer-events:none; z-index:6; text-align:center; }";
-  css += "#xp-text { font-size:10px; color:#ffe082; text-shadow:0 1px 2px #000; margin-bottom:2px; }";
-  css += "#xp-bar-bg { width:100%; height:7px; background:rgba(0,0,0,0.7); border:1px solid #555; border-radius:10px; overflow:hidden; }";
-  css += "#xp-fill { height:100%; width:0%; background:linear-gradient(90deg,#ffb300,#ffe082); transition:width 0.3s; }";
+  // XP ABAJO DE LOS BOTONES - TEXTO ADENTRO DE LA BARRA - ARREGLO 2
+  css += "#hud-xp-wrap { position:absolute; bottom:5px; left:50%; transform:translateX(-50%); width:320px; max-width:44vw; pointer-events:none; z-index:6; text-align:center; }";
+  css += "#xp-bar-bg { position:relative; width:100%; height:11px; background:rgba(0,0,0,0.7); border:1px solid #555; border-radius:10px; overflow:hidden; }";
+  css += "#xp-fill { position:absolute; left:0; top:0; height:100%; width:0%; background:linear-gradient(90deg,#ffb300,#ffe082); transition:width 0.3s; z-index:1; }";
+  css += "#xp-text { position:absolute; left:0; top:50%; transform:translateY(-50%); width:100%; font-size:9px; line-height:1; color:#fff; text-shadow:0 1px 2px #000, 0 0 2px #000; z-index:2; pointer-events:none; }";
   css += "#hud-bottom-right { position:absolute; bottom:10px; right:10px; width:260px; height:190px; pointer-events:auto; z-index:5; }";
   css += ".skill-btn { position:absolute; width:48px; height:48px; border-radius:50%; background:#222; border:2px solid #888; color:#fff; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; z-index:2; }";
   css += ".skill-btn:active { transform:scale(0.92); }";
@@ -41,9 +41,10 @@
   css += "#skill-1 { left:78px; top:0; }";
   css += "#skill-2 { left:136px; top:0; }";
   css += "#skill-3 { left:194px; top:10px; }";
-  css += "#skill-4 { left:68px; top:62px; }";
-  css += "#skill-5 { left:126px; top:58px; }";
-  css += "#skill-6 { left:180px; top:66px; }";
+  // ARREGLO 3 - SKILLS
+  css += "#skill-4 { left:86px; top:88px; }"; // baja hasta abajo y a la derecha, mas cerca de BASICO
+  css += "#skill-5 { left:126px; top:54px; }"; // sube apenitas (antes 58)
+  css += "#skill-6 { left:180px; top:52px; }"; // sube un poco mas porque estaba tapado (antes 66)
   css += ".window { position:absolute; background:#e8e0d0; color:#222; border:3px solid #7a6a4a; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.7); display:none; pointer-events:auto; z-index:10; }";
   css += ".window.open { display:block; }";
   css += ".window-header { background:#3a3a5a; color:#fff; padding:8px 12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-radius:5px 5px 0 0; cursor:grab; touch-action:none; user-select:none; }";
@@ -62,7 +63,7 @@
   css += ".stat-section { background:#3a3a5a; color:#fff; padding:5px 8px; margin:0 0 6px 0; font-size:12px; font-weight:bold; }";
   css += ".stat-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:3px 0; border-bottom:1px solid #ccc; font-size:13px; white-space:nowrap; }";
   css += ".stat-row b { text-align:right; flex-shrink:0; }";
-  // INVENTARIO SIN SCROLL - calza justo
+  // INVENTARIO SIN SCROLL - calza justo - ARREGLO 1: 6x6 = 36 slots, mismo tamaño de ventana
   css += "#window-inventario { top:8px; left:480px; width:340px; max-width:38vw; }";
   css += "#window-inventario .window-body { overflow:visible; max-height:none; padding:10px 10px 8px 10px; }";
   css += "#inv-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; }";
@@ -86,7 +87,7 @@
   css += "#joy-down { left:49px; bottom:0; }";
   css += "#joy-left { left:0; top:49px; }";
   css += "#joy-right { right:0; top:49px; }";
-  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:230px; height:170px; bottom:10px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:max-content; max-width:94vw; left:8px; } #window-inventario { width:94vw; left:8px; top:auto; bottom:8px; } #joypad { transform:scale(0.85); transform-origin:bottom left; } #hud-bottom-center { bottom:22px; } #hud-xp-wrap { bottom:5px; width:280px; } }";
+  css += "@media (max-height:450px) { #hud-top-left { width:190px; } #hud-bottom-right { width:230px; height:170px; bottom:10px; transform:scale(0.9); transform-origin:bottom right; } #window-personaje { width:max-content; max-width:94vw; left:8px; } #window-inventario { width:94vw; left:8px; top:auto; bottom:8px; } #joypad { transform:scale(0.85); transform-origin:bottom left; } #hud-bottom-center { bottom:12px; } #hud-xp-wrap { bottom:3px; width:280px; } }";
 
   var style = document.createElement("style");
   style.textContent = css;
@@ -124,7 +125,7 @@
     + "<button class='tab-btn' id='tab-personaje'>Personaje</button>"
     + "<button class='tab-btn' id='tab-skills'>Skills</button>"
     + "</div>"
-    + "<div id='hud-xp-wrap'><div id='xp-text'>0 / 0 XP</div><div id='xp-bar-bg'><div id='xp-fill'></div></div></div>"
+    + "<div id='hud-xp-wrap'><div id='xp-bar-bg'><div id='xp-fill'></div><div id='xp-text'>0 / 0 XP</div></div></div>"
     + "<div id='hud-bottom-right'>"
     + "<button class='skill-btn empty' id='skill-1'>Skill 1</button>"
     + "<button class='skill-btn empty' id='skill-2'>Skill 2</button>"
@@ -203,7 +204,7 @@
   var equipment = {};
   for (var e = 0; e < EQUIP_SLOTS.length; e++) { equipment[EQUIP_SLOTS[e].key] = null; }
   var inventory = [];
-  for (var i = 0; i < 42; i++) { inventory.push(null); }
+  for (var i = 0; i < 36; i++) { inventory.push(null); } // ARREGLO 1: 6x6 = 36
   var selectedEquipKey = null;
 
   function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
@@ -288,7 +289,7 @@
     setText("personaje-title", "Personaje - " + heroName);
     setText("hp-text", Math.floor(c.hp) + " / " + s.maxHP);
     setText("mp-text", Math.floor(c.mp) + " / " + s.maxMP);
-    // XP - conectado al snapshot de main.js (nuevo o cargado)
+    // XP - conectado al snapshot de main.js (nuevo o cargado) - texto ahora adentro de la barra
     setText("xp-text", xp + " / " + xpNeed + " XP");
     // ORO - conectado al snapshot, solo en inventario
     setText("inv-oro", oro);
