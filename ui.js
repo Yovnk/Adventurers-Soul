@@ -1,13 +1,14 @@
-// ui.js - SOLO HUD
-// 1: Skills estilo Mobile Legends. 2: Personaje sin hueco, se achica solo. 3: Inventario mas chico + ventanas que se pueden arrastrar.
-
+// ui.js - SOLO HUD - BLINDADO
+// No lee localStorage. No toca oro/XP. Solo muestra la copia que le pasa main.js con UI.update(snapshot).
+// Si alguien toca esa copia, solo se miente el dibujo, no se guarda nada en Firebase.
 (function() {
   function getCharacter() {
     if (window.currentCharacter) return window.currentCharacter;
     if (window.paladin) return window.paladin;
     return null;
   }
-  window.moveInput = { x: 0, y: 0 };
+  window.moveInput = { x: 0, y: 0 }; // Solo input de movimiento, no economia
+  var lastSnapshot = null; // Copia de solo lectura que manda main.js
 
   var css = "";
   css += "* { margin:0; padding:0; box-sizing:border-box; font-family: Tahoma, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }";
@@ -22,17 +23,17 @@
   css += ".bar-bg { width:100%; height:10px; background:#222; border:1px solid #000; border-radius:4px; overflow:hidden; margin-top:1px; }";
   css += "#hp-fill { height:100%; width:100%; background:linear-gradient(90deg,#d32f2f,#ff5252); }";
   css += "#mp-fill { height:100%; width:100%; background:linear-gradient(90deg,#1976d2,#42a5f5); }";
+  css += "#xp-fill { height:100%; width:0%; background:linear-gradient(90deg,#ffb300,#ffe082); }";
+  css += "#hud-money { font-size:11px; color:#ffd700; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }";
   css += "#hud-bottom-center { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); display:flex; gap:8px; pointer-events:auto; background:rgba(0,0,0,0.6); border:2px solid #555; border-radius:20px; padding:6px; z-index:6; }";
   css += ".tab-btn { background:#2a2a35; border:2px solid #666; color:#fff; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:bold; font-size:13px; white-space:nowrap; }";
   css += ".tab-btn.active { background:#ffd700; color:#000; border-color:#ffd700; }";
-  // 1. SKILLS ML: BASICO abajo en la esquina, skills corridas a la derecha al borde
   css += "#hud-bottom-right { position:absolute; bottom:10px; right:10px; width:260px; height:190px; pointer-events:auto; z-index:5; }";
   css += ".skill-btn { position:absolute; width:48px; height:48px; border-radius:50%; background:#222; border:2px solid #888; color:#fff; font-size:10px; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; z-index:2; }";
   css += ".skill-btn:active { transform:scale(0.92); }";
   css += ".skill-btn.empty { opacity:0.45; }";
   css += "#btn-basic { position:absolute; right:0; bottom:0; width:84px; height:84px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ff7043, #bf360c); border:3px solid #fff; color:#fff; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.6); z-index:1; }";
   css += "#btn-basic:active { transform:scale(0.93); }";
-  // Arco ML: misma forma, todo corrido a la derecha al borde, arriba del BASICO
   css += "#skill-1 { left:78px; top:0; }";
   css += "#skill-2 { left:136px; top:0; }";
   css += "#skill-3 { left:194px; top:10px; }";
@@ -45,7 +46,6 @@
   css += ".window-header:active { cursor:grabbing; }";
   css += ".window-close { background:#c62828; border:none; color:#fff; width:24px; height:24px; border-radius:4px; cursor:pointer; font-weight:bold; }";
   css += ".window-body { padding:10px; overflow-y:auto; max-height:72vh; overflow-x:hidden; }";
-  // 2. PERSONAJE SIN HUECO: sin ancho fijo, la ventana se achica sola
   css += "#window-personaje { top:8px; left:8px; width:max-content; max-width:92vw; }";
   css += "#personaje-layout { display:flex; gap:10px; align-items:flex-start; }";
   css += "#equip-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; width:230px; flex-shrink:0; }";
@@ -58,7 +58,6 @@
   css += ".stat-section { background:#3a3a5a; color:#fff; padding:5px 8px; margin:0 0 6px 0; font-size:12px; font-weight:bold; }";
   css += ".stat-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:3px 0; border-bottom:1px solid #ccc; font-size:13px; white-space:nowrap; }";
   css += ".stat-row b { text-align:right; flex-shrink:0; }";
-  // 3. INVENTARIO MAS CHICO: abre a la derecha de Personaje - MISMO TAMAÑO DE VENTANA, 42 SLOTS
   css += "#window-inventario { top:8px; left:480px; width:340px; max-width:38vw; }";
   css += "#inv-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; }";
   css += ".inv-slot { width:100%; aspect-ratio:1; background:#fff; border:2px solid #999; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; }";
@@ -100,6 +99,9 @@
     + "<div class='bar-bg'><div id='hp-fill'></div></div>"
     + "<div class='bar-label'><span>MP</span><span id='mp-text'>0 / 0</span></div>"
     + "<div class='bar-bg'><div id='mp-fill'></div></div>"
+    + "<div class='bar-label'><span>XP</span><span id='xp-text'>0 / 0</span></div>"
+    + "<div class='bar-bg'><div id='xp-fill'></div></div>"
+    + "<div id='hud-money'>0 cobre</div>"
     + "</div>"
     + "<div id='joypad'>"
     + "<div class='joy-btn' id='joy-up'>↑</div>"
@@ -193,16 +195,11 @@
   var selectedEquipKey = null;
 
   function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
-
   function getHeroName(c) {
-    try {
-      var saved = JSON.parse(localStorage.getItem('personajeActual') || '{}');
-      if (saved && saved.name) return saved.name;
-    } catch(e) {}
+    if (lastSnapshot && lastSnapshot.name) return lastSnapshot.name;
     if (c && c.name && c.name !== c.className) return c.name;
     return c ? c.className : "Personaje";
   }
-
   function renderEquipment() {
     var grid = document.getElementById("equip-grid");
     if (!grid) return;
@@ -260,21 +257,31 @@
       else { btn.textContent = "Skill " + k; btn.classList.add("empty"); }
     }
   }
-  function updateUI() {
+  function updateUI(snapshot) {
+    if (snapshot) lastSnapshot = snapshot; // Solo lectura para mostrar
     var c = getCharacter();
     if (!c) return;
     var p = c.primary;
     var s = c.secondary;
     var heroName = getHeroName(c);
+    var nivel = (lastSnapshot && lastSnapshot.nivel) || 1;
+    var xp = (lastSnapshot && lastSnapshot.xp) || 0;
+    var xpNeed = (lastSnapshot && lastSnapshot.xpNeed) || 0;
+    var bloqueado = !!(lastSnapshot && lastSnapshot.bloqueado);
+    var dinero = (lastSnapshot && lastSnapshot.dineroTexto) || "0 cobre";
     setText("hud-name", heroName);
-    setText("hud-class", "Nv. 1 - " + c.className);
+    setText("hud-class", "Nv. " + nivel + " - " + c.className + (bloqueado ? " 🔒" : ""));
     setText("personaje-title", "Personaje - " + heroName);
     setText("hp-text", Math.floor(c.hp) + " / " + s.maxHP);
     setText("mp-text", Math.floor(c.mp) + " / " + s.maxMP);
+    setText("xp-text", xp + " / " + xpNeed);
+    setText("hud-money", dinero);
     var hpFill = document.getElementById("hp-fill");
     var mpFill = document.getElementById("mp-fill");
+    var xpFill = document.getElementById("xp-fill");
     if (hpFill) hpFill.style.width = (c.hp / s.maxHP * 100) + "%";
     if (mpFill) mpFill.style.width = (c.mp / s.maxMP * 100) + "%";
+    if (xpFill) xpFill.style.width = (xpNeed > 0 ? Math.min(100, xp / xpNeed * 100) : 0) + "%";
     setText("st-str", p.str);
     setText("st-vit", p.vit);
     setText("st-vol", p.vol);
@@ -300,7 +307,6 @@
     renderEquipment();
   }
 
-  // VENTANAS INDEPENDIENTES: abrir una no cierra la otra
   function closeAll() {
     var wins = document.querySelectorAll(".window");
     for (var i = 0; i < wins.length; i++) { wins[i].classList.remove("open"); }
@@ -317,13 +323,8 @@
     var el = document.getElementById(id);
     if (!el) return;
     var wasOpen = el.classList.contains("open");
-    if (wasOpen) {
-      closeOne(id, tabId);
-    } else {
-      el.classList.add("open");
-      var tab = document.getElementById(tabId);
-      if (tab) tab.classList.add("active");
-    }
+    if (wasOpen) closeOne(id, tabId);
+    else { el.classList.add("open"); var tab = document.getElementById(tabId); if (tab) tab.classList.add("active"); }
   }
   document.getElementById("tab-inventario").onclick = function() { toggleWindow("window-inventario", "tab-inventario"); };
   document.getElementById("tab-personaje").onclick = function() { toggleWindow("window-personaje", "tab-personaje"); };
@@ -336,7 +337,6 @@
     (function(n) { document.getElementById("skill-" + n).onclick = function() { if (window.onSkill) window.onSkill(n); }; })(k);
   }
 
-  // ARRASTRAR VENTANAS: desde la barra azul, con mouse y con dedo
   var topZ = 20;
   function makeDraggable(win) {
     var header = win.querySelector(".window-header");
@@ -344,17 +344,10 @@
     win.dataset.draggable = "1";
     var startX = 0, startY = 0, startLeft = 0, startTop = 0, dragging = false;
     function onStart(clientX, clientY) {
-      dragging = true;
-      win.style.transform = "none";
+      dragging = true; win.style.transform = "none";
       var rect = win.getBoundingClientRect();
-      startX = clientX;
-      startY = clientY;
-      startLeft = rect.left;
-      startTop = rect.top;
-      topZ++;
-      win.style.zIndex = topZ;
-      win.style.left = startLeft + "px";
-      win.style.top = startTop + "px";
+      startX = clientX; startY = clientY; startLeft = rect.left; startTop = rect.top;
+      topZ++; win.style.zIndex = topZ; win.style.left = startLeft + "px"; win.style.top = startTop + "px";
     }
     function onMove(clientX, clientY) {
       if (!dragging) return;
@@ -362,8 +355,7 @@
       var newTop = startTop + (clientY - startY);
       newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - 60));
       newTop = Math.max(0, Math.min(newTop, window.innerHeight - 40));
-      win.style.left = newLeft + "px";
-      win.style.top = newTop + "px";
+      win.style.left = newLeft + "px"; win.style.top = newTop + "px";
     }
     function onEnd() { dragging = false; }
     header.addEventListener("mousedown", function(e) {
@@ -376,13 +368,11 @@
     });
     header.addEventListener("touchstart", function(e) {
       if (e.target.classList.contains("window-close")) return;
-      var t = e.changedTouches[0];
-      onStart(t.clientX, t.clientY);
+      var t = e.changedTouches[0]; onStart(t.clientX, t.clientY);
     }, { passive: true });
     header.addEventListener("touchmove", function(e) {
       if (!dragging) return;
-      var t = e.changedTouches[0];
-      onMove(t.clientX, t.clientY);
+      var t = e.changedTouches[0]; onMove(t.clientX, t.clientY);
       if (e.cancelable) e.preventDefault();
     }, { passive: false });
     header.addEventListener("touchend", onEnd, { passive: true });
@@ -391,7 +381,6 @@
   makeDraggable(wInv);
   makeDraggable(wSkills);
 
-  // PAD CON DESLIZAR - misma variable window.moveInput que lee main.js
   var joypadEl = document.getElementById("joypad");
   var joyActive = false;
   var joyTouchId = null;
@@ -410,37 +399,24 @@
     var rect = joypadEl.getBoundingClientRect();
     var cx = rect.left + rect.width / 2;
     var cy = rect.top + rect.height / 2;
-    var dx = clientX - cx;
-    var dy = clientY - cy;
-    var dead = 12;
-    var x = 0, y = 0;
-    if (dx > dead) x = 1;
-    if (dx < -dead) x = -1;
-    if (dy > dead) y = 1;
-    if (dy < -dead) y = -1;
-    window.moveInput.x = x;
-    window.moveInput.y = y;
-    setJoyVisual(x, y);
+    var dx = clientX - cx; var dy = clientY - cy;
+    var dead = 12; var x = 0, y = 0;
+    if (dx > dead) x = 1; if (dx < -dead) x = -1;
+    if (dy > dead) y = 1; if (dy < -dead) y = -1;
+    window.moveInput.x = x; window.moveInput.y = y; setJoyVisual(x, y);
   }
   function joyEnd(e) {
-    joyActive = false;
-    joyTouchId = null;
-    window.moveInput.x = 0;
-    window.moveInput.y = 0;
-    setJoyVisual(0, 0);
+    joyActive = false; joyTouchId = null;
+    window.moveInput.x = 0; window.moveInput.y = 0; setJoyVisual(0, 0);
     if (e) e.preventDefault();
   }
   if (joypadEl) {
     joypadEl.addEventListener("touchstart", function(e) {
       if (e) e.preventDefault();
-      var t = e.changedTouches[0];
-      joyActive = true;
-      joyTouchId = t.identifier;
-      updateJoyFromPoint(t.clientX, t.clientY);
+      var t = e.changedTouches[0]; joyActive = true; joyTouchId = t.identifier; updateJoyFromPoint(t.clientX, t.clientY);
     }, { passive: false });
     joypadEl.addEventListener("touchmove", function(e) {
-      if (!joyActive) return;
-      if (e) e.preventDefault();
+      if (!joyActive) return; if (e) e.preventDefault();
       for (var i = 0; i < e.changedTouches.length; i++) {
         if (e.changedTouches[i].identifier === joyTouchId) updateJoyFromPoint(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
       }
@@ -454,8 +430,7 @@
 
   var keysHeld = {};
   document.addEventListener("keydown", function(e) {
-    var key = e.key.toLowerCase();
-    keysHeld[key] = true;
+    var key = e.key.toLowerCase(); keysHeld[key] = true;
     if (key === "i") toggleWindow("window-inventario", "tab-inventario");
     if (key === "p") toggleWindow("window-personaje", "tab-personaje");
     if (key === "k") toggleWindow("window-skills", "tab-skills");
@@ -468,21 +443,20 @@
     if (x !== 0 || y !== 0) { window.moveInput.x = x; window.moveInput.y = y; }
   });
   document.addEventListener("keyup", function(e) {
-    var key = e.key.toLowerCase();
-    keysHeld[key] = false;
+    var key = e.key.toLowerCase(); keysHeld[key] = false;
     var x = 0, y = 0;
     if (keysHeld["a"] || keysHeld["arrowleft"]) x -= 1;
     if (keysHeld["d"] || keysHeld["arrowright"]) x += 1;
     if (keysHeld["w"] || keysHeld["arrowup"]) y -= 1;
     if (keysHeld["s"] || keysHeld["arrowdown"]) y += 1;
     if (joyActive) return;
-    window.moveInput.x = x;
-    window.moveInput.y = y;
+    window.moveInput.x = x; window.moveInput.y = y;
   });
 
   renderInventory();
   renderEquipment();
   if (window.characterReady) { window.characterReady.then(function() { updateUI(); }); } else { setTimeout(updateUI, 500); }
-  setInterval(updateUI, 500);
-  window.UI = { update: updateUI, equipment: equipment, inventory: inventory, closeAll: closeAll };
+  setInterval(function() { updateUI(); }, 500);
+  // Solo se expone update() para dibujar. No se expone inventario/equipo para mutar.
+  window.UI = { update: updateUI };
 })();
