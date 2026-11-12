@@ -41,12 +41,12 @@
   css += "#btn-basic { position:absolute; right:0; bottom:0; width:84px; height:84px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ff7043, #bf360c); border:3px solid #fff; color:#fff; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.6); z-index:1; }";
   css += "#btn-basic:active { transform:scale(0.93); }";
   // SKILLS - NUEVO AJUSTE
-  css += "#skill-1 { left:74px; top:84px; }"; // mas a la izquierda, que no toque a 4 y 5
+  css += "#skill-1 { left:70px; top:80px; }"; // mas a la izquierda, que no toque a 4 y 5
   css += "#skill-2 { left:136px; top:8px; }"; // un poco mas abajo
   css += "#skill-3 { left:194px; top:8px; }"; // un poco mas arriba
   css += "#skill-4 { left:94px; top:118px; }"; // mas abajo a la altura de la palabra BASICO y un pelito mas a la derecha
-  css += "#skill-5 { left:112px; top:54px; }"; // un poco a la izquierda (antes 126)
-  css += "#skill-6 { left:172px; top:36px; }"; // mas arriba y apenas a la izquierda (antes 180 / 42)
+  css += "#skill-5 { left:108px; top:54px; }"; // un poco a la izquierda (antes 126)
+  css += "#skill-6 { left:166px; top:36px; }"; // mas arriba y apenas a la izquierda (antes 180 / 42)
   css += ".window { position:absolute; background:#e8e0d0; color:#222; border:3px solid #7a6a4a; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.7); display:none; pointer-events:auto; z-index:10; }";
   css += ".window.open { display:block; }";
   css += ".window-header { background:#3a3a5a; color:#fff; padding:8px 12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-radius:5px 5px 0 0; cursor:grab; touch-action:none; user-select:none; }";
