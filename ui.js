@@ -41,12 +41,12 @@
   css += "#btn-basic { position:absolute; right:0; bottom:0; width:84px; height:84px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #ff7043, #bf360c); border:3px solid #fff; color:#fff; font-size:13px; font-weight:bold; cursor:pointer; box-shadow:0 0 12px rgba(0,0,0,0.6); z-index:1; }";
   css += "#btn-basic:active { transform:scale(0.93); }";
   // SKILLS - NUEVO AJUSTE
-  css += "#skill-1 { left:100px; top:84px; }"; // baja para quedar en medio de Skill 4 y Skill 5
-  css += "#skill-2 { left:136px; top:0; }";
-  css += "#skill-3 { left:194px; top:10px; }";
+  css += "#skill-1 { left:80px; top:84px; }"; // mas a la izquierda, que no toque a 4 y 5
+  css += "#skill-2 { left:136px; top:8px; }"; // un poco mas abajo
+  css += "#skill-3 { left:194px; top:2px; }"; // un poco mas arriba
   css += "#skill-4 { left:94px; top:118px; }"; // mas abajo a la altura de la palabra BASICO y un pelito mas a la derecha
   css += "#skill-5 { left:112px; top:54px; }"; // un poco a la izquierda (antes 126)
-  css += "#skill-6 { left:180px; top:42px; }"; // un poco mas arriba (antes 52)
+  css += "#skill-6 { left:172px; top:30px; }"; // mas arriba y apenas a la izquierda (antes 180 / 42)
   css += ".window { position:absolute; background:#e8e0d0; color:#222; border:3px solid #7a6a4a; border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.7); display:none; pointer-events:auto; z-index:10; }";
   css += ".window.open { display:block; }";
   css += ".window-header { background:#3a3a5a; color:#fff; padding:8px 12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-radius:5px 5px 0 0; cursor:grab; touch-action:none; user-select:none; }";
@@ -107,7 +107,7 @@
 
   // SVG ICONOS - dibujados en codigo, sin imagen externa
   var ICON_BACKPACK = "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M9 8V6a3 3 0 0 1 6 0v2'/><path d='M5 8h14v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8z'/><path d='M9 12h6v4a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-4z'/><path d='M5 12h2M17 12h2'/></svg>";
-  var ICON_HUMAN = "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='5' r='2.5'/><path d='M12 8v7'/><path d='M8.5 10.5 7 21M15.5 10.5 17 21'/><path d='M8.5 10.5h7'/><path d='M12 15l-2 6M12 15l2 6'/></svg>";
+  var ICON_HUMAN = "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='8' r='3.5'/><path d='M4.5 20c0-4 3.4-6.5 7.5-6.5S19.5 16 19.5 20'/></svg>";
 
   var hud = document.createElement("div");
   hud.id = "hud";
