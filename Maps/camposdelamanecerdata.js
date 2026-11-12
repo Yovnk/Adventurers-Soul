@@ -1,5 +1,5 @@
 // Maps/camposdelamanecerdata.js
-// Data de CamposDelAmanecer - Mapa 120 x 120 tiles de 40px
+// Data de Campos Del Amanecer - Mapa 240 x 240 tiles de 40px
 // index.html -> Maps/mapsdata.js -> este archivo -> Maps/camposdelamanecer.jpg
 // PLANTILLA: igual que elariondata.js
 
@@ -23,7 +23,7 @@
 
   // Este global es el que mapsdata.js va a buscar con mapGlobal
   window.camposdelamanecerMapData = {
-    name: "CamposDelAmanecer",
+    name: "Campos Del Amanecer",
     file: "Maps/camposdelamanecer.jpg",
     width: MAP_WIDTH,
     height: MAP_HEIGHT,
@@ -35,7 +35,7 @@
     loaded: false,
     ready: null,
     // Elarion = ciudad segura, sin mobs
-    // CamposDelAmanecer = campo afuera, ACA SI hay mobs
+    // Campos Del Amanecer = campo afuera, ACA SI hay mobs
     esZonaSegura: false,
     nivelRecomendado: 1
   };
@@ -43,7 +43,7 @@
   window.camposdelamanecerMapData.ready = new Promise(function(resolve) {
     img.onload = function() {
       window.camposdelamanecerMapData.loaded = true;
-      console.log("CamposDelAmanecer cargado:", window.camposdelamanecerMapData.file, window.camposdelamanecerMapData.pixelWidth + "x" + window.camposdelamanecerMapData.pixelHeight);
+      console.log("Campos Del Amanecer cargado:", window.camposdelamanecerMapData.file, window.camposdelamanecerMapData.pixelWidth + "x" + window.camposdelamanecerMapData.pixelHeight);
       resolve(window.camposdelamanecerMapData);
     };
     img.onerror = function() {
