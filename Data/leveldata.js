@@ -1,14 +1,8 @@
-// Data/leveldata.js
-// Curva GF rellenada - Final, no tocar
-// 1-51 reales de GF, 52-100 extrapolados x1.055
-// Niveles de cambio de clase 6,16,31,66,86 ya rellenados, no son gratis
-
 window.LEVEL_DATA = {
   CAP_TOTAL: 100,
-  // XP necesaria para pasar DE ese nivel AL siguiente
   XP_NEEDED: {
     1:15, 2:34, 3:57, 4:92, 5:135, 6:180, 7:560, 8:850, 9:1250, 10:1750,
-    11:2400, 12:2144, 13:2800, 14:3700, 15:4700, 16:5773, 17:7000, 18:8500, 19:10500, 20:13000,
+    11:2400, 12:2600, 13:2800, 14:3700, 15:4700, 16:5773, 17:7000, 18:8500, 19:10500, 20:13000,
     21:16000, 22:20000, 23:25000, 24:31000, 25:38000, 26:47000, 27:58000, 28:70000, 29:83720, 30:114840,
     31:130176, 32:147312, 33:166398, 34:186648, 35:209058, 36:233000, 37:259920, 38:288600, 39:320018, 40:353058,
     41:389088, 42:428000, 43:470000, 44:515000, 45:562140, 46:615000, 47:675000, 48:740000, 49:800000, 50:851658,
@@ -21,28 +15,18 @@ window.LEVEL_DATA = {
   getXPNeeded: function(level) {
     return this.XP_NEEDED[level] || 0;
   },
-
-  // Gates verdaderos tipo Grand Fantasia - Trabado por defecto
-  // Sin quest = sin pasar. Nadie pasa de 30 a 31 hasta desbloquear 30.
   GATES: {
     30: { desbloqueado: false, nombre: "Cambio 30" },
     50: { desbloqueado: false, nombre: "Cambio 50" },
     70: { desbloqueado: false, nombre: "Cambio 70" },
     80: { desbloqueado: false, nombre: "Cambio 80" }
   },
-
-  // ¿Está bloqueado en este nivel?
   estaBloqueado: function(nivelActual) {
     return !!(this.GATES[nivelActual] && !this.GATES[nivelActual].desbloqueado);
   },
-
-  // ¿Puede subir de este nivel al siguiente?
   puedeSubir: function(nivelActual) {
     return !this.estaBloqueado(nivelActual);
   },
-
-  // Esto lo va a llamar la quest cuando la tengas hecha
-  // Ejemplo: LEVEL_DATA.desbloquearGate(30)
   desbloquearGate: function(nivel) {
     if (this.GATES[nivel]) {
       this.GATES[nivel].desbloqueado = true;
@@ -50,60 +34,38 @@ window.LEVEL_DATA = {
     }
     return false;
   },
-
-  // GANAR XP - Único lugar donde se sube de nivel
-  // Uso: LEVEL_DATA.ganarXP(jugador, 100)
-  // jugador tiene que tener: { nivel: 1, xp: 0 }
-  // Si está en un gate trabado, se queda con la barra llena y no sube
   ganarXP: function(jugador, xpGanada) {
     if (!jugador) return { subio: 0, bloqueado: false, nivel: 0 };
     if (!jugador.xp) jugador.xp = 0;
     if (!jugador.nivel) jugador.nivel = 1;
-
     jugador.xp += xpGanada;
     var nivelesSubidos = 0;
     var bloqueado = false;
-
     while (jugador.nivel < this.CAP_TOTAL && jugador.xp >= this.getXPNeeded(jugador.nivel)) {
-      // Gate trabado = no sube, se estanca con la barra llena
       if (!this.puedeSubir(jugador.nivel)) {
         jugador.xp = this.getXPNeeded(jugador.nivel);
         bloqueado = true;
         break;
       }
-
       jugador.xp -= this.getXPNeeded(jugador.nivel);
       jugador.nivel++;
       nivelesSubidos++;
     }
-
-    // Tope total 100, no se pasa
     if (jugador.nivel >= this.CAP_TOTAL) {
       jugador.nivel = this.CAP_TOTAL;
       jugador.xp = 0;
     }
-
     return { subio: nivelesSubidos, bloqueado: bloqueado, nivel: jugador.nivel };
   }
 };
 
-// Oro - Regla final, no tocar
-// 100 cobre = 1 plata
-// 100 plata = 1 oro
 window.MONEY = {
   COBRE_POR_PLATA: 100,
   PLATA_POR_ORO: 100,
-
-  // 1. SUMAR cobre y que se convierta solo a plata y oro
-  // Ejemplo: tenes 90 cobre y sumas 20 -> queda 1 plata 10 cobre solo
   sumarCobre: function(billetera, cobreASumar) {
     var totalCobre = billetera.oro * 100 * 100 + billetera.plata * 100 + billetera.cobre + cobreASumar;
     return this.normalizar(totalCobre);
   },
-
-  // 2. RESTAR y que nunca quede en negativo
-  // Si no alcanza, no resta nada y devuelve false
-  // Si alcanza, resta y devuelve la billetera nueva
   restarCobre: function(billetera, cobreARestar) {
     var totalCobre = billetera.oro * 100 * 100 + billetera.plata * 100 + billetera.cobre;
     if (cobreARestar > totalCobre) {
@@ -111,8 +73,6 @@ window.MONEY = {
     }
     return this.normalizar(totalCobre - cobreARestar);
   },
-
-  // Convierte un total en cobre a oro / plata / cobre ordenado
   normalizar: function(totalCobre) {
     var oro = Math.floor(totalCobre / (100 * 100));
     var resto = totalCobre - oro * 100 * 100;
@@ -120,10 +80,6 @@ window.MONEY = {
     var cobre = resto - plata * 100;
     return { oro: oro, plata: plata, cobre: cobre };
   },
-
-  // 3. MOSTRAR siempre bien ordenado: oro, plata, cobre
-  // Ejemplo: "2 oro 5 plata 10 cobre"
-  // Si es 0 en todo, muestra "0 cobre"
   mostrar: function(billetera) {
     var partes = [];
     if (billetera.oro > 0) partes.push(billetera.oro + " oro");
