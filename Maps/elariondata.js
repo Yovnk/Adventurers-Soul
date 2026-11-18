@@ -4,7 +4,7 @@ export function createElarion(){
   for(let y=0;y<110;y++){ const r=[]; for(let x=0;x<110;x++) r.push(0); m.tiles.push(r); }
   
   m.portals = [
-    { x1: 1515, y1: 2750, x2: 1670, y2: 2800, to: "CamposDelAmanecer", destX: 4800, destY: 4800 }
+    { x1: 1515, y1: 2750, x2: 1670, y2: 2800, to: "CamposDelAmanecer", destX: 3400, destY: 370 }
   ];
 
   m.ready=new Promise(res=>{ img.onload=()=>{m.loaded=true;res(m)}; img.onerror=()=>res(m); });
