@@ -1,4 +1,4 @@
-// main.js - corregido FPS + fullscreen + scroll slots + coords + guardar posicion + portal desde elariondata.js
+// main.js - corregido FPS + fullscreen + scroll slots + coords + guardar posicion + portal desde elariondata.js + camara zoom 0.75
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -21,6 +21,7 @@ const gameWorldEl = document.getElementById('game-world');
 const canvas = document.getElementById('game-canvas');
 
 let portalCooldown = 0;
+let CAMERA_ZOOM = 0.75;
 
 let currentUser=null, slots=[null,null,null], currentMapName=null, jugadorActual=null, ultimoGuardado=null;
 let allCharacters={}, allMaps={};
@@ -216,8 +217,13 @@ function startGameLoop(){
     checkPortals();
     const map2=getCurrentMap(); const mapW2=map2?map2.pixelWidth:mapW; const mapH2=map2?map2.pixelHeight:mapH;
     playerX=Math.max(0,Math.min(playerX,mapW2)); playerY=Math.max(0,Math.min(playerY,mapH2));
-    let camX=playerX-canvas.width/2, camY=playerY-canvas.height/2;
-    camX=Math.max(0,Math.min(camX,Math.max(0,mapW2-canvas.width))); camY=Math.max(0,Math.min(camY,Math.max(0,mapH2-canvas.height)));
+    let viewW = canvas.width / CAMERA_ZOOM;
+    let viewH = canvas.height / CAMERA_ZOOM;
+    let camX = playerX - viewW/2, camY = playerY - viewH/2;
+    camX = Math.max(0, Math.min(camX, Math.max(0, mapW2 - viewW)));
+    camY = Math.max(0, Math.min(camY, Math.max(0, mapH2 - viewH)));
+    ctx.save();
+    ctx.scale(CAMERA_ZOOM, CAMERA_ZOOM);
     if(map2 && map2.image && map2.image.complete && map2.image.naturalWidth>0) ctx.drawImage(map2.image,-camX,-camY,map2.pixelWidth,map2.pixelHeight);
     // Dibujar portales del mapa actual
     if(map2 && map2.portals){
@@ -236,11 +242,12 @@ function startGameLoop(){
         ctx.restore();
       }
     }
+    ctx.restore();
     const animData=char.data.sprites[currentAnim]||char.data.sprites.idle; const img=spriteImages[currentAnim]||spriteImages.idle;
     if(img && img.complete && img.naturalWidth>0 && animData){
       const totalFrames=animData.frames, useFrames=animData.useFrames, fw=img.naturalWidth/totalFrames, fh=img.naturalHeight;
       if(timestamp-lastFrameTime>animData.frameDuration){ spriteFrame=(spriteFrame+1)%useFrames.length; lastFrameTime=timestamp; }
-      const frameNumber=useFrames[spriteFrame], sx=(frameNumber-1)*fw, drawH=128, drawW=fw*(drawH/fh), dx=canvas.width/2-drawW/2, dy=canvas.height/2-drawH/2;
+      const frameNumber=useFrames[spriteFrame], sx=(frameNumber-1)*fw, drawH=128*CAMERA_ZOOM, drawW=fw*(drawH/fh), dx=canvas.width/2-drawW/2, dy=canvas.height/2-drawH/2;
       ctx.imageSmoothingEnabled=false; ctx.save();
       if(!facingRight){ ctx.translate(canvas.width/2,0); ctx.scale(-1,1); ctx.drawImage(img,sx,0,fw,fh,-drawW/2,dy,drawW,drawH); }
       else ctx.drawImage(img,sx,0,fw,fh,dx,dy,drawW,drawH);
