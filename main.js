@@ -1,3 +1,5 @@
+// main.js - corregido FPS + fullscreen + scroll slots + coords + guardar posicion + portal desde elariondata.js
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
@@ -18,6 +20,8 @@ const appEl = document.getElementById('app');
 const gameWorldEl = document.getElementById('game-world');
 const canvas = document.getElementById('game-canvas');
 
+let portalCooldown = 0;
+
 let currentUser=null, slots=[null,null,null], currentMapName=null, jugadorActual=null, ultimoGuardado=null;
 let allCharacters={}, allMaps={};
 let input={x:0,y:0};
@@ -34,8 +38,6 @@ function migrarSlot(s){
   if(s.plata==null) s.plata=0;
   if(s.cobre==null) s.cobre=0;
   if(!s.gates) s.gates={30:false,50:false,70:false,80:false};
-  // Posicion guardada en pixeles. Personajes viejos no la tienen, arrancan en el centro de Elarion.
-  // Los personajes nuevos tenian x:5 y:5 en tiles, eso NO es pixel, asi que no lo usamos.
   if(s.posX==null) s.posX = (typeof s.x==="number" && s.x>100) ? s.x : 1920;
   if(s.posY==null) s.posY = (typeof s.y==="number" && s.y>100) ? s.y : 1920;
   s.level=s.nivel; s.gold=s.oro;
@@ -50,7 +52,6 @@ function validarSlot(s){
   for(const g of [30,50,70,80]){ if(s.nivel<g) s.gates[g]=false; else s.gates[g]=!!s.gates[g]; }
   s.posX=Math.max(0,Math.min(9600,Math.floor(Number(s.posX)||1920)));
   s.posY=Math.max(0,Math.min(9600,Math.floor(Number(s.posY)||1920)));
-  // Compatibilidad: mantenemos x/y en pixeles tambien
   s.x=s.posX; s.y=s.posY;
   s.level=s.nivel; s.gold=s.oro; return s;
 }
@@ -98,6 +99,25 @@ function getClassNames(){ return Object.keys(allCharacters); }
 function getMapNames(){ return Object.keys(allMaps).length?Object.keys(allMaps):["Elarion"]; }
 function getCurrentMap(){ if(currentMapName && allMaps[currentMapName]) return allMaps[currentMapName]; const k=Object.keys(allMaps); return k.length?allMaps[k[0]]:null; }
 
+// Revisa si el jugador esta dentro de un portal del mapa actual (definido en elariondata.js / camposdelamanecerdata.js)
+function checkPortals(){
+  if(portalCooldown > 0) return;
+  const map = getCurrentMap();
+  if(!map || !map.portals) return;
+  for(const p of map.portals){
+    if(playerX >= p.x1 && playerX <= p.x2 && playerY >= p.y1 && playerY <= p.y2){
+      currentMapName = p.to;
+      playerX = p.destX;
+      playerY = p.destY;
+      portalCooldown = 60;
+      if(jugadorActual) jugadorActual.map = currentMapName;
+      guardarPosicionSiCambio(true);
+      refrescarUI();
+      break;
+    }
+  }
+}
+
 function checkOrientation(){
   if(jugadorActual) return true;
   const isPortrait=window.innerHeight>window.innerWidth;
@@ -128,7 +148,6 @@ async function loadSlots(uid){
 }
 async function saveSlots(){
   if(!currentUser) return;
-  // Si estamos en el mundo, primero copiamos la posicion actual al slot
   if(jugadorActual){ jugadorActual.posX=Math.floor(playerX); jugadorActual.posY=Math.floor(playerY); jugadorActual.x=jugadorActual.posX; jugadorActual.y=jugadorActual.posY; if(currentMapName) jugadorActual.map=currentMapName; }
   slots.forEach(syncSlot);
   if(ultimoGuardado){ try{ const anterior=JSON.parse(ultimoGuardado); slots.forEach((s,i)=>{ if(!s||!anterior[i]) return; if(s.nivel>anterior[i].nivel+5) s.nivel=anterior[i].nivel+5; const oroAntes=(anterior[i].oro||0)*10000+(anterior[i].plata||0)*100+(anterior[i].cobre||0); const oroAhora=(s.oro||0)*10000+(s.plata||0)*100+(s.cobre||0); if(oroAhora>oroAntes+500000){ const cap=MONEY?MONEY.normalizar(oroAntes+500000):{oro:s.oro,plata:s.plata,cobre:s.cobre}; s.oro=cap.oro; s.plata=cap.plata; s.cobre=cap.cobre; } validarSlot(s); }); }catch(e){} }
@@ -157,7 +176,6 @@ async function renderSlots(){
 async function enterWorld(personaje){
   goFullscreen(); migrarSlot(personaje); jugadorActual=personaje; aplicarGatesGuardados(personaje);
   currentMapName=personaje.map||getMapNames()[0];
-  // Cargar la posicion guardada
   playerX = (typeof personaje.posX==="number") ? personaje.posX : 1920;
   playerY = (typeof personaje.posY==="number") ? personaje.posY : 1920;
   lastPosGuardadaX=Math.floor(playerX); lastPosGuardadaY=Math.floor(playerY); lastPosGuardadaMapa=currentMapName;
@@ -194,9 +212,30 @@ function startGameLoop(){
     else { if(currentAnim!=="idle"){currentAnim="idle"; spriteFrame=0; lastFrameTime=timestamp;} }
     const map=getCurrentMap(); const mapW=map?map.pixelWidth:3840; const mapH=map?map.pixelHeight:3840;
     playerX=Math.max(0,Math.min(playerX,mapW)); playerY=Math.max(0,Math.min(playerY,mapH));
+    if(portalCooldown > 0) portalCooldown--;
+    checkPortals();
+    const map2=getCurrentMap(); const mapW2=map2?map2.pixelWidth:mapW; const mapH2=map2?map2.pixelHeight:mapH;
+    playerX=Math.max(0,Math.min(playerX,mapW2)); playerY=Math.max(0,Math.min(playerY,mapH2));
     let camX=playerX-canvas.width/2, camY=playerY-canvas.height/2;
-    camX=Math.max(0,Math.min(camX,Math.max(0,mapW-canvas.width))); camY=Math.max(0,Math.min(camY,Math.max(0,mapH-canvas.height)));
-    if(map && map.image && map.image.complete && map.image.naturalWidth>0) ctx.drawImage(map.image,-camX,-camY,map.pixelWidth,map.pixelHeight);
+    camX=Math.max(0,Math.min(camX,Math.max(0,mapW2-canvas.width))); camY=Math.max(0,Math.min(camY,Math.max(0,mapH2-canvas.height)));
+    if(map2 && map2.image && map2.image.complete && map2.image.naturalWidth>0) ctx.drawImage(map2.image,-camX,-camY,map2.pixelWidth,map2.pixelHeight);
+    // Dibujar portales del mapa actual
+    if(map2 && map2.portals){
+      for(const p of map2.portals){
+        const px = p.x1 - camX, py = p.y1 - camY, pw = p.x2 - p.x1, ph = p.y2 - p.y1;
+        ctx.save();
+        ctx.fillStyle = "rgba(0,200,255,0.35)";
+        ctx.fillRect(px, py, pw, ph);
+        ctx.strokeStyle = "#00e5ff";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(px, py, pw, ph);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 14px Tahoma";
+        ctx.textAlign = "center";
+        ctx.fillText("PORTAL", px + pw/2, py + ph/2 + 5);
+        ctx.restore();
+      }
+    }
     const animData=char.data.sprites[currentAnim]||char.data.sprites.idle; const img=spriteImages[currentAnim]||spriteImages.idle;
     if(img && img.complete && img.naturalWidth>0 && animData){
       const totalFrames=animData.frames, useFrames=animData.useFrames, fw=img.naturalWidth/totalFrames, fh=img.naturalHeight;
@@ -207,8 +246,7 @@ function startGameLoop(){
       else ctx.drawImage(img,sx,0,fw,fh,dx,dy,drawW,drawH);
       ctx.restore();
     }
-    // Actualizar coords en pantalla + autoguardar posicion cada ~1 segundo (60 frames)
-    if(ui && ui.updatePos) ui.updatePos(Math.floor(playerX), Math.floor(playerY), map ? (map.displayName||map.mapName||currentMapName) : currentMapName);
+    if(ui && ui.updatePos) ui.updatePos(Math.floor(playerX), Math.floor(playerY), map2 ? (map2.displayName||map2.mapName||currentMapName) : currentMapName);
     framesDesdeGuardado++;
     if(framesDesdeGuardado>=60){ framesDesdeGuardado=0; guardarPosicionSiCambio(false); }
     requestAnimationFrame(loop);
@@ -216,7 +254,6 @@ function startGameLoop(){
   requestAnimationFrame(loop);
 }
 
-// Guardar posicion si salis / cerras / cambias de pestaña
 document.addEventListener("visibilitychange", ()=>{ if(document.hidden) guardarPosicionSiCambio(true); });
 window.addEventListener("beforeunload", ()=>{ guardarPosicionSiCambio(true); });
 
