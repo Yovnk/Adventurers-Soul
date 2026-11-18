@@ -6,7 +6,7 @@ export function createCampos(){
   // Portal Campos -> Elarion
   // Coords de ejemplo, cambialas por las que quieras
   m.portals = [
-    { x1: 100, y1: 100, x2: 250, y2: 200, to: "Elarion", destX: 1600, destY: 2700 }
+    { x1: 3300, y1: 320, x2: 3350, y2: 375, to: "Elarion", destX: 1600, destY: 2700 }
   ];
 
   m.ready=new Promise(res=>{ img.onload=()=>{m.loaded=true;res(m)}; img.onerror=()=>res(m); });
