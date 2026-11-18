@@ -1,6 +1,6 @@
 export function createCampos(){
   const img=new Image(); img.src="Maps/camposdelamanecer.jpg";
-  const m={ mapName:"CamposDelAmanecer", displayName:"Campos Del Amanecer", name:"Campos Del Amanecer", file:"Maps/camposdelamanecer.jpg", width:200, height:200, tileSize:36, pixelWidth:200*36, pixelHeight:200*36, tiles:[], image:img, loaded:false, esZonaSegura:false, nivelRecomendado:1 };
+  const m={ mapName:"CamposDelAmanecer", displayName:"Campos Del Amanecer", name:"Campos Del Amanecer", file:"Maps/camposdelamanecer.jpg", width:160, height:160, tileSize:32, pixelWidth:160*32, pixelHeight:160*32, tiles:[], image:img, loaded:false, esZonaSegura:false, nivelRecomendado:1 };
   for(let y=0;y<m.height;y++){ const r=[]; for(let x=0;x<m.width;x++) r.push(0); m.tiles.push(r); }
 
   // Portal Campos -> Elarion
